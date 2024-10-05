@@ -1,6 +1,7 @@
 from pathlib import Path
 from dotenv import load_dotenv
 import os
+from datetime import timedelta
 
 load_dotenv()
 
@@ -23,8 +24,34 @@ INSTALLED_APPS = [
     # External Packages
     "rest_framework",
     "drf_spectacular",
+    "mptt",
+    # "rest_framework_simplejwt",
+    # "drf_yasg",
+    
     # Internal Apps
     "drfecommerce.product",
+    "drfecommerce.apps.guest",
+    "drfecommerce.apps.blog",
+    "drfecommerce.apps.blog_tag",
+    "drfecommerce.apps.catalog",
+    "drfecommerce.apps.category",
+    "drfecommerce.apps.my_admin",
+    "drfecommerce.apps.order",
+    "drfecommerce.apps.order_detail",
+    "drfecommerce.apps.payment",
+    # "drfecommerce.apps.product",
+    "drfecommerce.apps.product_store",
+    "drfecommerce.apps.promotion",
+    "drfecommerce.apps.setting",
+    "drfecommerce.apps.shipping",
+    "drfecommerce.apps.store",
+    "drfecommerce.apps.tag",
+    "drfecommerce.apps.transaction",
+]
+
+CORS_ALLOW_CREDENTIALS = True # to accept cookies via ajax request
+CORS_ORIGIN_WHITELIST = [
+    '*' # the domain for front-end app(you can add more than 1) 
 ]
 
 MIDDLEWARE = [
@@ -86,6 +113,7 @@ TIME_ZONE = "UTC"
 
 USE_I18N = True
 
+TIME_ZONE = 'Asia/Ho_Chi_Minh'  # Thiết lập múi giờ Việt Nam
 USE_TZ = True
 
 
@@ -99,10 +127,32 @@ STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=500),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+}
+
 REST_FRAMEWORK = {
-    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    # 'DEFAULT_AUTHENTICATION_CLASSES': (
+    #     'BEComputerVision.users.authentication.SafeJWTAuthentication',
+    # ),
+    # 'DEFAULT_PERMISSION_CLASSES': (
+    #     'rest_framework.permissions.IsAuthenticated',
+    # ),
+
+    # 'DEFAULT_AUTHENTICATION_CLASSES': [
+    #     'rest_framework_simplejwt.authentication.JWTAuthentication',
+    # ],
 }
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "Django DRF Ecommerce",
 }
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587  # hoặc 465 nếu cần SSL
+EMAIL_USE_TLS = False  # hoặc False nếu không cần TLS
+EMAIL_HOST_USER = os.environ.get("EMAIL")
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_PASSWORD")
