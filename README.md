@@ -20,11 +20,11 @@ Make sure you have the following installed before proceeding:
 ## Setup and Installation
 1. Clone the repository:
 ```
-git clone https://github.com/whosgotch/django-drf-ecommerce.git
+git clone https://github.com/levando20194017/DRF-Ecommerce.git
 ```
 2. Create a virtual environment:
 ```
-python -m venv env
+python -m venv venv
 ```
 3. Activate the virtual environment:
 </br>
