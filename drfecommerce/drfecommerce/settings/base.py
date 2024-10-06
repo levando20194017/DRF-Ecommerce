@@ -29,7 +29,7 @@ INSTALLED_APPS = [
     # "drf_yasg",
     
     # Internal Apps
-    "drfecommerce.product",
+    # "drfecommerce.product",
     "drfecommerce.apps.guest",
     "drfecommerce.apps.blog",
     "drfecommerce.apps.blog_tag",
@@ -39,7 +39,7 @@ INSTALLED_APPS = [
     "drfecommerce.apps.order",
     "drfecommerce.apps.order_detail",
     "drfecommerce.apps.payment",
-    # "drfecommerce.apps.product",
+    "drfecommerce.apps.product",
     "drfecommerce.apps.product_store",
     "drfecommerce.apps.promotion",
     "drfecommerce.apps.setting",
