@@ -20,7 +20,6 @@ CREATE TABLE "catalogs" (
   "level" integer,
   "sort_order" float,
   "image" varchar,
-  "is_active" boolean,
   "created_at" timestamp,
   "updated_at" timestamp,
   "deleted_at" timestamp
@@ -48,7 +47,6 @@ CREATE TABLE "products" (
   "dimensions" varchar,
   "material" varchar,
   "label" varchar,
-  "is_active" boolean,
   "created_at" timestamp,
   "updated_at" timestamp,
   "deleted_at" timestamp
@@ -175,7 +173,6 @@ CREATE TABLE "blogs" (
   "slug" varchar,
   "short_description" text,
   "content" text,
-  "user_id" integer,
   "category_id" integer,
   "status" varchar,
   "image" varchar,
