@@ -25,8 +25,8 @@ INSTALLED_APPS = [
     "rest_framework",
     "drf_spectacular",
     "mptt",
-    # "rest_framework_simplejwt",
-    # "drf_yasg",
+    "rest_framework_simplejwt",
+    "drf_yasg",
     
     # Internal Apps
     # "drfecommerce.product",
@@ -134,12 +134,12 @@ SIMPLE_JWT = {
 
 REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
-    # 'DEFAULT_AUTHENTICATION_CLASSES': (
-    #     'BEComputerVision.users.authentication.SafeJWTAuthentication',
-    # ),
-    # 'DEFAULT_PERMISSION_CLASSES': (
-    #     'rest_framework.permissions.IsAuthenticated',
-    # ),
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'drfecommerce.apps.guest.authentication.SafeJWTAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
 
     # 'DEFAULT_AUTHENTICATION_CLASSES': [
     #     'rest_framework_simplejwt.authentication.JWTAuthentication',

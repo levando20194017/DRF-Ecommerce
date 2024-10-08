@@ -16,7 +16,7 @@ class Guest(models.Model):
     is_verified = models.BooleanField(default=False)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
-    delete_at = models.DateTimeField(null=True, default='')
+    delete_at = models.DateTimeField(null=True, blank=True, default=None)
      
     @property
     def is_authenticated(self):

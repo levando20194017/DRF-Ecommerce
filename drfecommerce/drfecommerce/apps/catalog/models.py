@@ -11,7 +11,7 @@ class Catalog(models.Model):
     image = models.CharField(max_length=255, null=True, blank=True)  # Tương đương với varchar
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)  # Tương đương với timestamp
-    deleted_at = models.DateTimeField(null=True, blank=True)  # Tương đương với timestamp
+    delete_at = models.DateTimeField(null=True, blank=True, default=None)
 
     class Meta:
         db_table = 'catalogs'  # Tên bảng trong cơ sở dữ liệu
