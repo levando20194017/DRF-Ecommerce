@@ -1,5 +1,6 @@
 from django.db import models
 from drfecommerce.apps.order.models import Order
+from django.utils import timezone
 
 class Transaction(models.Model):
     id = models.AutoField(primary_key=True)
@@ -10,4 +11,4 @@ class Transaction(models.Model):
     bank_code = models.CharField(max_length=50)
     bank_status = models.CharField(max_length=50)
     bank_message = models.CharField(max_length=255)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(default=timezone.now)
