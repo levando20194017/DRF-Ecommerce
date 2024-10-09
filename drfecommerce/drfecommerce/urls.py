@@ -4,11 +4,12 @@ from rest_framework.routers import DefaultRouter
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 from drfecommerce.apps.guest import views as views_guest
+from drfecommerce.apps.my_admin import views as views_admin
 
 # from drfecommerce.product import views
 
 router = DefaultRouter()
-router.register(r'users', views_guest.GuestViewSetCreate, basename='guests-register')
+# router.register(r'users', views_guest.GuestViewSetCreate, basename='guests-register')
 
 # router.register(r"category", views.CategoryViewSet)
 # router.register(r"brand", views.BrandViewSet)
@@ -16,6 +17,11 @@ router.register(r'users', views_guest.GuestViewSetCreate, basename='guests-regis
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path('api/admin/login/',  views_admin.AdminViewSetLogin.as_view({'post': 'login'}), name='admin-login'),
+    path('api/admin/token/refresh/', views_admin.RefreshTokenView.as_view({'post': 'post'}), name='admin_token_refresh'),
+    path("api/admin/list-admins/", views_admin.AdminViewSetGetData.as_view({'get': 'list_admins'}), name='admin-list'),
+    path("api/admin/admin-information/<int:id>/", views_admin.AdminViewSetGetData.as_view({'get': 'detail_admin'}), name='admin-information'),
+    path("api/admin/get-list-guests/", views_admin.GuestViewSetGetData.as_view({'get': 'list_guests'}), name='admin-get-list-guest'),
     
     path('api/login/',  views_guest.GuestViewSetLogin.as_view({'post': 'login'}), name='guest-login'),
     path('api/token/refresh/', views_guest.RefreshTokenView.as_view({'post': 'post'}), name='token_refresh'),

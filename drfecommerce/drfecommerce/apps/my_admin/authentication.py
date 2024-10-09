@@ -4,7 +4,9 @@ from django.middleware.csrf import CsrfViewMiddleware
 from rest_framework import exceptions
 import os
 from dotenv import load_dotenv
-from .models import Guest
+from .models import MyAdmin
+from rest_framework import status
+from rest_framework.response import Response
 
 # Load environment variables from .env file
 load_dotenv()
@@ -39,15 +41,14 @@ class SafeJWTAuthentication(BaseAuthentication):
         except IndexError:
             raise exceptions.AuthenticationFailed('Token prefix missing')
 
-        user = Guest.objects.filter(id=payload['user_id']).first()
-        if user is None:
-            raise exceptions.AuthenticationFailed('User not found')
-
-        if not user.is_verified:
-            raise exceptions.AuthenticationFailed('user is inactive')
-
+        try:
+            admin = MyAdmin.objects.filter(id=payload['admin_id']).first()
+            if admin is None:
+                raise exceptions.AuthenticationFailed('Admin not found')
+        except:
+            raise exceptions.AuthenticationFailed('An error occurred')
         self.enforce_csrf(request)
-        return (user, None)
+        return (admin, None)
 
     def enforce_csrf(self, request):
         """
