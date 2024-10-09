@@ -46,7 +46,7 @@ class CatalogViewSetGetData(viewsets.ViewSet):
         page_size = int(request.GET.get('page_size', 10))
 
         # Lấy toàn bộ danh sách catalog
-        catalogs = Catalog.objects.all().order_by('sort_order')
+        catalogs = Catalog.objects.all()
 
         # Chia trang
         paginator = Paginator(catalogs, page_size)
@@ -93,6 +93,9 @@ class CatalogViewSetGetData(viewsets.ViewSet):
             'level': catalog.level,
             'sort_order': catalog.sort_order,
             'image': catalog.image,
+            'created_at': catalog.created_at,
+            'updated_at': catalog.updated_at,
+            'delete_at': catalog.delete_at,
             'children': []
         }
 
