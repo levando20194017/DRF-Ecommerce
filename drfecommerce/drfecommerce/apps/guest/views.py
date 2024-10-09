@@ -9,9 +9,6 @@ from django.core.paginator import PageNotAnInteger
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from django.core.exceptions import ValidationError
-from django.core.mail import send_mail
-import random
-import smtplib
 from rest_framework.permissions import IsAuthenticated
 from drfecommerce.apps.guest.authentication import SafeJWTAuthentication
 from rest_framework.permissions import AllowAny
