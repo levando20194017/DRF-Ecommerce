@@ -224,3 +224,52 @@ class CatalogViewSetDeleteData(viewsets.ViewSet):
         # Đệ quy xóa mềm các catalog con
         for child in child_catalogs:
             self.soft_delete_catalog_and_children(child)
+            
+class CatalogViewSetRestoreData(viewsets.ViewSet):
+    authentication_classes = [SafeJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @action(detail=False, methods=['put'], url_path="restore-catalog")
+    def restore_catalog(self, request):
+        """
+        Restore a catalog and its child catalogs.
+        """
+        catalog_id = request.data.get('id')
+        
+        if not catalog_id:
+            return Response({
+                "status": status.HTTP_400_BAD_REQUEST,
+                "message": "Catalog ID is required."
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            # Tìm catalog bị xóa mềm (tức là có delete_at không null)
+            catalog = Catalog.objects.get(id=catalog_id, delete_at__isnull=False)
+        except Catalog.DoesNotExist:
+            return Response({
+                "status": status.HTTP_404_NOT_FOUND,
+                "message": "Catalog not found or already restored."
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        # Khôi phục catalog và các catalog con của nó
+        self.restore_catalog_and_children(catalog)
+
+        return Response({
+            "status": status.HTTP_200_OK,
+            "message": "Catalog and related child catalogs restored successfully."
+        }, status=status.HTTP_200_OK)
+
+    def restore_catalog_and_children(self, catalog):
+        """
+        Recursively restore the catalog and its child catalogs.
+        """
+        # Đặt delete_at = None để phục hồi catalog
+        catalog.delete_at = None
+        catalog.save()
+
+        # Tìm các catalog con của catalog hiện tại bị xóa mềm
+        child_catalogs = Catalog.objects.filter(parent_id=catalog.id, delete_at__isnull=False)
+
+        # Đệ quy phục hồi các catalog con
+        for child in child_catalogs:
+            self.restore_catalog_and_children(child)
