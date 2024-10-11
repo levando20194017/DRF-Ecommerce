@@ -106,3 +106,84 @@ class CatalogViewSetGetData(viewsets.ViewSet):
             catalog_data['children'].append(self.build_catalog_tree(child, catalog_dict))
 
         return catalog_data
+    
+class CatalogViewSetCreateData(viewsets.ViewSet):
+    """
+    A simple Viewset for handling user actions.
+    """
+    queryset = Catalog.objects.all()
+    serializer_class = serializerGetCatalog
+    
+    authentication_classes = [SafeJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    @action(detail=False, methods=['post'], url_path="create-new-catalog")
+    def create_catalog(self, request):      
+        img_data = request.data.get('file')  # Nhận dữ liệu ảnh dưới dạng binary
+        img_name = request.data.get('file_name')
+        parent_id = request.data.get('parent_id')
+        name = request.data.get('name')
+        
+        allowed_fields = ['name', 'description', 'parent_id']
+        catalog_data = {}
+        
+        for field in allowed_fields:
+            if field in request.data:
+                catalog_data[field] = request.data[field]
+                
+        try:
+            if(parent_id):
+                catalog_parent = Catalog.objects.get(id=parent_id)
+                catalog_data['level'] = catalog_parent.level  + 1
+                
+                #check trùng tên catalog trong cùng 1 bậc thuộc cùng 1 lớp cha parent_id
+                list_catalog_children = Catalog.objects.filter(parent_id=parent_id)
+                
+                # Kiểm tra xem có tên trùng lặp với new_name trong danh sách không
+                duplicates = [catalog.name for catalog in list_catalog_children if catalog.name == name]
+                if duplicates:
+                    return Response({
+                            'status': 201,
+                            'message': "Catalog at this level already exists"
+                            })
+            else:
+                catalog_data['level'] = 1
+                
+                #check trùng tên catalog ở catalog bậc 1. bậc cao nhất
+                list_catalog_children = Catalog.objects.filter(level=1)
+                
+                duplicates = [catalog.name for catalog in list_catalog_children if catalog.name == name]
+                if duplicates:
+                    return Response({
+                            'status': 201,
+                            'message': "Catalog at this level already exists"
+                            })
+                    
+            # Lưu file ảnh vào đường dẫn cục bộ
+            img_path = os.path.join("C:/Users/Mine/Documents/document/PROJECT/DATN/Ecommerce_Images/", img_name)
+            # Đọc dữ liệu từ InMemoryUploadedFile và ghi vào file
+            with open(img_path, 'wb') as img_file:
+                for chunk in img_data.chunks():
+                    img_file.write(chunk)
+
+            # Cập nhật đường dẫn ảnh vào trường image của catalog
+            catalog_data['image'] = f'file:///C:/Users/Mine/Documents/document/PROJECT/DATN/Ecommerce_Images/{img_name}'
+            
+            serializer = serializerCreateCatalog(data=catalog_data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response({
+                    "status": 200,
+                    "message": "Create new user successfully!",
+                    "data": serializer.data
+                }, status=status.HTTP_201_CREATED)
+            return Response({
+                'status': status.HTTP_400_BAD_REQUEST,
+                'message': serializer.errors
+                })
+        except Catalog.DoesNotExist:
+            return Response({
+                "status": 404,
+                "message": "Catalog parent not found."
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+     

@@ -7,7 +7,7 @@ class Catalog(models.Model):
     description = models.TextField()  # Tương đương với text
     parent_id = models.ForeignKey('self', null=True, blank=True, on_delete=models.CASCADE)  # Khóa ngoại tới chính nó
     level = models.IntegerField()  # Integer
-    sort_order = models.FloatField()  # Float
+    sort_order = models.FloatField(null=True, blank=True)  # Float
     image = models.CharField(max_length=255, null=True, blank=True)  # Tương đương với varchar
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)  # Tương đương với timestamp
