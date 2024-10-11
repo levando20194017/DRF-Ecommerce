@@ -9,4 +9,4 @@ class serializerGetCatalog(serializers.ModelSerializer):
 class serializerCreateCatalog(serializers.ModelSerializer):
     class Meta:
         model = Catalog
-        fields  = ['name', 'description', 'parent_id', 'level']
+        fields  = ['name', 'description', 'parent_id', 'level', 'image']
