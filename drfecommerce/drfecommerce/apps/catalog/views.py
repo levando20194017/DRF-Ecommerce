@@ -273,3 +273,43 @@ class CatalogViewSetRestoreData(viewsets.ViewSet):
         # Đệ quy phục hồi các catalog con
         for child in child_catalogs:
             self.restore_catalog_and_children(child)
+            
+class CatalogViewSetEditData(viewsets.ViewSet):
+    authentication_classes = [SafeJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @action(detail=False, methods=['put'], url_path="edit-catalog")
+    def edit_catalog(self, request):
+        """
+        Edit catalog details.
+        """
+        catalog_id = request.data.get('id')
+        name = request.data.get('name')
+        description = request.data.get('description')
+
+        if not catalog_id:
+            return Response({
+                "status": status.HTTP_400_BAD_REQUEST,
+                "message": "Catalog ID is required."
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            catalog = Catalog.objects.get(id=catalog_id)
+        except Catalog.DoesNotExist:
+            return Response({
+                "status": status.HTTP_404_NOT_FOUND,
+                "message": "Catalog does not exist."
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        # Chỉ cập nhật nếu trường đó được gửi lên từ request
+        if name:
+            catalog.name = name
+        if description:
+            catalog.description = description
+
+        catalog.save()
+
+        return Response({
+            "status": status.HTTP_200_OK,
+            "message": "Catalog updated successfully."
+        }, status=status.HTTP_200_OK)
