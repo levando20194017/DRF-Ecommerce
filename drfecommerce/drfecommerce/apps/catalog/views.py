@@ -8,21 +8,17 @@ from django.core.paginator import EmptyPage
 from django.core.paginator import PageNotAnInteger
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
-from django.core.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from drfecommerce.apps.my_admin.authentication import SafeJWTAuthentication
 from rest_framework.decorators import action, permission_classes
-from rest_framework import exceptions
 import os
 from dotenv import load_dotenv
+from django.utils import timezone
 
 # Load environment variables from .env file
 load_dotenv()
 
 class CatalogViewSetGetData(viewsets.ViewSet):
-    """
-    A simple Viewset for handling user actions.
-    """
     queryset = Catalog.objects.all()
     serializer_class = serializerGetCatalog
     
@@ -108,11 +104,7 @@ class CatalogViewSetGetData(viewsets.ViewSet):
         return catalog_data
     
 class CatalogViewSetCreateData(viewsets.ViewSet):
-    """
-    A simple Viewset for handling user actions.
-    """
-    queryset = Catalog.objects.all()
-    serializer_class = serializerGetCatalog
+    serializer_class = serializerCreateCatalog
     
     authentication_classes = [SafeJWTAuthentication]
     permission_classes = [IsAuthenticated]
@@ -186,4 +178,49 @@ class CatalogViewSetCreateData(viewsets.ViewSet):
                 "message": "Catalog parent not found."
             }, status=status.HTTP_404_NOT_FOUND)
         
-     
+class CatalogViewSetDeleteData(viewsets.ViewSet):
+    authentication_classes = [SafeJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    @action(detail=False, methods=['delete'], url_path="delete-catalog")
+    def delete_catalog(self, request):
+        """
+        Soft delete a catalog and its child catalogs.
+        """
+        catalog_id = request.query_params.get('id')
+
+        if not catalog_id:
+            return Response({
+                "status": status.HTTP_400_BAD_REQUEST,
+                "message": "Catalog ID is required."
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            catalog = Catalog.objects.get(id=catalog_id, delete_at__isnull=True)
+        except Catalog.DoesNotExist:
+            return Response({
+                "status": status.HTTP_404_NOT_FOUND,
+                "message": "Catalog not found or already deleted."
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        # Perform soft delete on the catalog and its child catalogs
+        self.soft_delete_catalog_and_children(catalog)
+
+        return Response({
+            "status": status.HTTP_200_OK,
+            "message": "Catalog and related child catalogs soft deleted successfully."
+        }, status=status.HTTP_200_OK)
+
+    def soft_delete_catalog_and_children(self, catalog):
+        """
+        Recursively soft delete the catalog and its child catalogs.
+        """
+        # Đặt thời gian hiện tại cho trường delete_at
+        catalog.delete_at = timezone.now()
+        catalog.save()
+
+        # Tìm các catalog con của catalog hiện tại
+        child_catalogs = Catalog.objects.filter(parent_id=catalog.id, delete_at__isnull=True)
+
+        # Đệ quy xóa mềm các catalog con
+        for child in child_catalogs:
+            self.soft_delete_catalog_and_children(child)
