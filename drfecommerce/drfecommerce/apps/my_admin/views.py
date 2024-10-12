@@ -3,7 +3,7 @@ from rest_framework import viewsets, status
 from rest_framework.response import Response
 from .models import MyAdmin
 from drfecommerce.apps.guest.models import Guest
-from drfecommerce.apps.my_admin.serializers import  AdminSerializerGetData, AdminSerializerLogin, RefreshTokenSerializer
+from drfecommerce.apps.my_admin.serializers import  AdminSerializerGetData, AdminSerializerLogin, AdminRefreshTokenSerializer
 from drfecommerce.apps.guest.serializers import  GuestSerializerGetData
 from django.core.paginator import Paginator
 from django.core.paginator import EmptyPage
@@ -194,7 +194,7 @@ class AdminViewSetLogin(viewsets.ViewSet):
             
 @permission_classes([AllowAny])
 class RefreshTokenView(viewsets.ViewSet):
-    serializer_class = RefreshTokenSerializer
+    serializer_class = AdminRefreshTokenSerializer
     
     #api refresh token
     @action(detail=False, methods=['post'], url_path='admin/token/refresh')

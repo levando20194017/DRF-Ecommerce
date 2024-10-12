@@ -2,7 +2,7 @@ import jwt
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from .models import Guest
-from drfecommerce.apps.guest.serializers import GuestSerializerCreate, GuestSerializerGetData, GuestSerializerLogin, RefreshTokenSerializer, GuestSerializerChangeInfor, GuestSerializerChangeAvatar
+from drfecommerce.apps.guest.serializers import GuestSerializerCreate, GuestSerializerGetData, GuestSerializerLogin, GuestRefreshTokenSerializer, GuestSerializerChangeInfor, GuestSerializerChangeAvatar
 from django.core.paginator import Paginator
 from django.core.paginator import EmptyPage
 from django.core.paginator import PageNotAnInteger
@@ -266,7 +266,7 @@ class GuestViewSetLogin(viewsets.ViewSet):
             
 @permission_classes([AllowAny])
 class RefreshTokenView(viewsets.ViewSet):
-    serializer_class = RefreshTokenSerializer
+    serializer_class = GuestRefreshTokenSerializer
     
     #api refresh token
     @action(detail=False, methods=['post'], url_path='token/refresh')

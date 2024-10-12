@@ -136,17 +136,15 @@ class CatalogViewSetCreateData(viewsets.ViewSet):
     @action(detail=False, methods=['post'], url_path="create-new-catalog")
     def create_catalog(self, request):    
         """ form data:
-        - img_data: binary file
-        - img_name: string (name of image)
-        - parent_id = integer (allow null, id of parent catalog)
+        - description: string
+        - parent_id: integer (allow null, id of parent catalog)
         - name: string
+        - image: string
         """  
-        img_data = request.data.get('file')  # Nhận dữ liệu ảnh dưới dạng binary
-        img_name = request.data.get('file_name')
         parent_id = request.data.get('parent_id')
         name = request.data.get('name')
         
-        allowed_fields = ['name', 'description', 'parent_id']
+        allowed_fields = ['name', 'description', 'parent_id', 'image']
         catalog_data = {}
         
         for field in allowed_fields:
@@ -181,16 +179,6 @@ class CatalogViewSetCreateData(viewsets.ViewSet):
                             'message': "Catalog at this level already exists"
                             })
                     
-            # Lưu file ảnh vào đường dẫn cục bộ
-            img_path = os.path.join("C:/Users/Mine/Documents/document/PROJECT/DATN/Ecommerce_Images/", img_name)
-            # Đọc dữ liệu từ InMemoryUploadedFile và ghi vào file
-            with open(img_path, 'wb') as img_file:
-                for chunk in img_data.chunks():
-                    img_file.write(chunk)
-
-            # Cập nhật đường dẫn ảnh vào trường image của catalog
-            catalog_data['image'] = f'file:///C:/Users/Mine/Documents/document/PROJECT/DATN/Ecommerce_Images/{img_name}'
-            
             serializer = serializerCreateCatalog(data=catalog_data)
             if serializer.is_valid():
                 serializer.save()
@@ -322,6 +310,7 @@ class CatalogViewSetEditData(viewsets.ViewSet):
         catalog_id = request.data.get('id')
         name = request.data.get('name')
         description = request.data.get('description')
+        image = request.data.get('image')
 
         if not catalog_id:
             return Response({
@@ -342,6 +331,8 @@ class CatalogViewSetEditData(viewsets.ViewSet):
             catalog.name = name
         if description:
             catalog.description = description
+        if image:
+            catalog.image = image
 
         catalog.save()
 
