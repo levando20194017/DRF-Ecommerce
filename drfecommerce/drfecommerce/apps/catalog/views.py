@@ -102,6 +102,31 @@ class CatalogViewSetGetData(viewsets.ViewSet):
 
         return catalog_data
     
+    @action(detail=False, methods=['get'], url_path="get-detail-catalog")
+    def get_catalog(self, request):
+        """
+        Get catalog details
+        """
+        catalog_id = request.query_params.get('id')
+        if not catalog_id:
+            return Response({
+                "status": status.HTTP_400_BAD_REQUEST,
+                "message": "Catalog ID is required."
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            catalog = Catalog.objects.get(id=catalog_id)
+            serializer = serializerGetCatalog(catalog)
+            return Response({
+                "status": status.HTTP_200_OK,
+                "data": serializer.data
+            }, status=status.HTTP_200_OK)
+        except Catalog.DoesNotExist:
+            return Response({
+                "status": status.HTTP_404_NOT_FOUND,
+                "message": "Catalog not found."
+            }, status=status.HTTP_404_NOT_FOUND)
+            
 class CatalogViewSetCreateData(viewsets.ViewSet):
     serializer_class = serializerCreateCatalog
     
