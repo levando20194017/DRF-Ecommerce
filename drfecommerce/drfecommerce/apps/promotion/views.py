@@ -21,7 +21,15 @@ class PromotionViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['post'], url_path="create-new-promotion")
     def create_promotion(self, request):
         """
-        Create a new promotion
+        Create a new promotion: body data
+        - name: string
+        - description: string
+        - code: string
+        - from_date
+        - to_date
+        - special_price: float
+        - member_price: float
+        - rate: float
         """
         name = request.data.get('name')
         description = request.data.get('description')
@@ -61,7 +69,15 @@ class PromotionViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['put'], url_path="edit-promotion")
     def edit_promotion(self, request):
         """
-        Edit an existing promotion
+        Edit an existing promotion: body data
+        - name: string
+        - description: string
+        - code: string
+        - from_date
+        - to_date
+        - special_price: float
+        - member_price: float
+        - rate: float
         """
         promotion_id = request.data.get('id')
         name = request.data.get('name')
@@ -110,7 +126,8 @@ class PromotionViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['delete'], url_path="delete-promotion")
     def delete_promotion(self, request):
         """
-        Soft delete a promotion
+        Soft delete a promotion:
+        - query_params: id
         """
         promotion_id = request.query_params.get('id')
         if not promotion_id:
@@ -141,7 +158,8 @@ class PromotionViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['put'], url_path="restore-promotion")
     def restore_promotion(self, request):
         """
-        Restore a catalog and its child catalogs.
+        Restore a catalog and its child catalogs: body data:
+        - id
         """
         promotion_id = request.data.get('id')
         
@@ -172,7 +190,8 @@ class PromotionViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['get'], url_path="get-dettail-promotion")
     def get_promotion(self, request):
         """
-        Get promotion details
+        Get promotion details: body data:
+        - id
         """
         promotion_id = request.query_params.get('id')
         if not promotion_id:
