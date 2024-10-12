@@ -58,6 +58,9 @@ class ProductViewSet(viewsets.ViewSet):
     def create_product(self, request):
         """
         API to create a new product.
+        - admin_id: int
+        - catalog_id: int
+        - promotion_id: int allow null
         - sku: string (max_length: 50)
         - code: string (max_length: 50)
         - part_number: string (max_length: 50)
@@ -121,6 +124,7 @@ class ProductViewSet(viewsets.ViewSet):
     def edit_product(self, request):
         """
         API to edit an existing product.
+        - id: integer
         - sku: string (max_length: 50)
         - code: string (max_length: 50)
         - part_number: string (max_length: 50)
@@ -143,24 +147,42 @@ class ProductViewSet(viewsets.ViewSet):
         product_id = data.get('id')
         try:
             product = Product.objects.get(id=product_id)
-
-            product.sku = data['sku']
-            product.code = data['code']
-            product.part_number = data['part_number']
-            product.name = data['name']
-            product.short_description = data['short_description']
-            product.description = data['description']
-            product.product_type = data['product_type']
-            product.price = data['price']
-            product.member_price = data['member_price']
-            product.quantity = data['quantity']
-            product.image = data['image']
-            product.gallery = data['gallery']
-            product.weight = data['weight']
-            product.diameter = data['diameter']
-            product.dimensions = data['dimensions']
-            product.material = data['material']
-            product.label = data['label']
+            promotion = Promotion.objects.get(id=data['promotion_id']) if data.get('promotion_id') else None
+            product.promotion = promotion
+            if data['sku']:
+                product.sku = data['sku']
+            if data['code']:
+                product.code = data['code']
+            if data['part_number']:
+                product.part_number = data['part_number']
+            if data['name']:
+                product.name = data['name']
+            if data['short_description']:
+                product.short_description = data['short_description']
+            if data['description']:
+                product.description = data['description']
+            if data['product_type']:
+                product.product_type = data['product_type']
+            if data['price']:
+                product.price = data['price']
+            if data['member_price']:
+                product.member_price = data['member_price']
+            if data['quantity']:
+                product.quantity = data['quantity']
+            if data['image']:
+                product.image = data['image']
+            if data['gallery']:
+                product.gallery = data['gallery']
+            if data['weight']:
+                product.weight = data['weight']
+            if data['diameter']:
+                product.diameter = data['diameter']
+            if data['dimensions']:
+                product.dimensions = data['dimensions']
+            if data['material']:
+                product.material = data['material']
+            if data['label']:
+                product.label = data['label']
             product.save()
 
             return Response({
@@ -172,6 +194,11 @@ class ProductViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Product not found."
+            }, status=status.HTTP_404_NOT_FOUND)
+        except Promotion.DoesNotExist:
+            return Response({
+                "status": status.HTTP_404_NOT_FOUND,
+                "message": "Promotion not found."
             }, status=status.HTTP_404_NOT_FOUND)
                      
     @action(detail=False, methods=['delete'], url_path="delete-product")
