@@ -7,6 +7,8 @@ from drfecommerce.apps.my_admin import views as views_admin
 from drfecommerce.apps.catalog import views as views_catalog
 from drfecommerce.apps.promotion import views as views_promotion
 from drfecommerce.apps.product import views as views_product
+from drfecommerce.settings import base
+from django.conf.urls.static import static
 
 router = DefaultRouter()
 
@@ -18,6 +20,7 @@ urlpatterns = [
     path("api/admin/list-admins/", views_admin.AdminViewSetGetData.as_view({'get': 'list_admins'}), name='admin-list'),
     path("api/admin/admin-information/<int:id>/", views_admin.AdminViewSetGetData.as_view({'get': 'detail_admin'}), name='admin-information'),
     path("api/admin/get-list-guests/", views_admin.GuestViewSetGetData.as_view({'get': 'list_guests'}), name='admin-get-list-guests'),
+    path("api/admin/upload-image/", views_admin.AdminViewsetUploadImage.as_view({'post': 'upload_image'}), name='admin-upload-image'),
     #catalog
     path("api/admin/get-list-catalogs/", views_catalog.CatalogViewSetGetData.as_view({'get': 'list_catalogs'}), name='admin-get-list-catalogs'),
     path("api/admin/create-new-catalog/", views_catalog.CatalogViewSetCreateData.as_view({'post': 'create_catalog'}), name='admin-create-new-catalog'),
@@ -54,4 +57,4 @@ urlpatterns = [
     
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/schema/docs", SpectacularSwaggerView.as_view(url_name="schema")),
-]
+]+ static(base.MEDIA_URL, document_root=base.MEDIA_ROOT)

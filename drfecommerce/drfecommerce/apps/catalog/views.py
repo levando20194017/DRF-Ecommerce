@@ -306,6 +306,7 @@ class CatalogViewSetEditData(viewsets.ViewSet):
         - id: integer (id of catalog)
         - name: string
         - description: string
+        - image: string (link of image catalog)
         """
         catalog_id = request.data.get('id')
         name = request.data.get('name')

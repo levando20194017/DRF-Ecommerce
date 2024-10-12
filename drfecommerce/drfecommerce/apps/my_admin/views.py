@@ -19,6 +19,9 @@ from drfecommerce.apps.my_admin.utils import generate_access_token, generate_ref
 from rest_framework import exceptions
 import os
 from dotenv import load_dotenv
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
+from drfecommerce.settings import base
 
 # Load environment variables from .env file
 load_dotenv()
@@ -224,6 +227,32 @@ class RefreshTokenView(viewsets.ViewSet):
             }
             })
 
+class AdminViewsetUploadImage(viewsets.ViewSet):
+    """
+    A simple Viewset for handling upload image actions.
+    """
+    authentication_classes = [SafeJWTAuthentication]
+    permission_classes = [IsAuthenticated]
 
-    
-            
+    @action(detail=False, methods=['post'], url_path='upload-image')
+    def upload_image(self, request):
+        if 'file' not in request.FILES:
+            return Response({
+                "status": status.HTTP_400_BAD_REQUEST,
+                "message": "No image file found in request."
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        image = request.FILES['file']
+        img_name = image.name
+
+        # Sử dụng default_storage để lưu ảnh vào thư mục cục bộ hoặc dịch vụ lưu trữ khác trong tương lai
+        save_path = os.path.join(base.MEDIA_ROOT, img_name)
+        file_path = default_storage.save(save_path, ContentFile(image.read()))
+        print(file_path)
+        file_url = default_storage.url(file_path)
+
+        return Response({
+            "status": status.HTTP_200_OK,
+            "message": "Image uploaded successfully!",
+            "img_url": file_url
+        }, status=status.HTTP_200_OK)

@@ -54,6 +54,29 @@ CORS_ORIGIN_WHITELIST = [
     '*' # the domain for front-end app(you can add more than 1) 
 ]
 
+# Đường dẫn cục bộ cho việc lưu trữ ảnh
+ECOMMERCE_IMAGES_DIR = os.path.join(BASE_DIR, 'C:/Users/Mine/Documents/document/PROJECT/DATN/Ecommerce_Images')
+
+# Cấu hình storage mặc định để lưu trữ file cục bộ
+DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+MEDIA_ROOT = ECOMMERCE_IMAGES_DIR
+MEDIA_URL = '/media/'  # Nếu bạn cần phục vụ ảnh từ URL
+
+#config storage to save image in the future
+# DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+
+# # Thông tin kết nối AWS S3
+# AWS_ACCESS_KEY_ID = 'your-access-key-id'
+# AWS_SECRET_ACCESS_KEY = 'your-secret-access-key'
+# AWS_STORAGE_BUCKET_NAME = 'your-bucket-name'
+
+# # Region của S3 (nếu có)
+# AWS_S3_REGION_NAME = 'your-region'
+
+# # URL sẽ được sử dụng để truy cập file từ S3
+# AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
+# MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/'
+
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
