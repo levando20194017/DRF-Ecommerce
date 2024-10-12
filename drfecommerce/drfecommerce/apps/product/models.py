@@ -8,7 +8,7 @@ class Product(models.Model):
     id = models.AutoField(primary_key=True)
     admin = models.ForeignKey(MyAdmin, on_delete=models.PROTECT, null=True, blank=True)
     catalog = models.ForeignKey(Catalog, on_delete=models.PROTECT, null=True, blank=True)
-    promotion = models.ForeignKey(Promotion, on_delete=models.PROTECT, null=True, blank=True)
+    promotion = models.ForeignKey(Promotion, on_delete=models.SET_NULL, null=True)
     sku = models.CharField(max_length=50)
     code = models.CharField(max_length=50)
     part_number = models.CharField(max_length=50)
