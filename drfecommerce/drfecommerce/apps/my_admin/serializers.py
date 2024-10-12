@@ -7,7 +7,7 @@ class AdminSerializerGetData(serializers.ModelSerializer):
         model = MyAdmin
         exclude = ['password']
 
-class RefreshTokenSerializer(serializers.Serializer):
+class AdminRefreshTokenSerializer(serializers.Serializer):
     refresh_token = serializers.CharField(required=True, help_text="The refresh token")
     
 class AdminSerializerLogin(serializers.ModelSerializer):

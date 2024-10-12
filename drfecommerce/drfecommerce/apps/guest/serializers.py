@@ -17,7 +17,7 @@ class GuestSerializerLogin(serializers.ModelSerializer):
         model = Guest
         fields = ['email', 'password']
         
-class RefreshTokenSerializer(serializers.Serializer):
+class GuestRefreshTokenSerializer(serializers.Serializer):
     refresh_token = serializers.CharField(required=True, help_text="The refresh token")
 
 class GuestSerializerChangeInfor(serializers.ModelSerializer):
