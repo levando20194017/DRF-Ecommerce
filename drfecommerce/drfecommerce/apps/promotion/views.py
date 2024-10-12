@@ -25,8 +25,8 @@ class PromotionViewSet(viewsets.ViewSet):
         - name: string
         - description: string
         - code: string
-        - from_date
-        - to_date
+        - from_date: date form yyyy-mm-dd
+        - to_date: date form yyyy-mm-dd
         - special_price: float
         - member_price: float
         - rate: float
@@ -225,7 +225,7 @@ class PromotionViewSet(viewsets.ViewSet):
         page_index = int(request.GET.get('page_index', 1))
         page_size = int(request.GET.get('page_size', 10))
 
-        promotions = Promotion.objects.filter(delete_at__isnull=True)  # Chỉ lấy các promotion chưa bị xóa mềm
+        promotions = Promotion.objects.all()  # Chỉ lấy các promotion chưa bị xóa mềm
         paginator = Paginator(promotions, page_size)
 
         try:
