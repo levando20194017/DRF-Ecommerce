@@ -105,7 +105,8 @@ class CatalogViewSetGetData(viewsets.ViewSet):
     @action(detail=False, methods=['get'], url_path="get-detail-catalog")
     def get_catalog(self, request):
         """
-        Get catalog details
+        Get catalog details:
+        - query params: id
         """
         catalog_id = request.query_params.get('id')
         if not catalog_id:
@@ -133,7 +134,13 @@ class CatalogViewSetCreateData(viewsets.ViewSet):
     authentication_classes = [SafeJWTAuthentication]
     permission_classes = [IsAuthenticated]
     @action(detail=False, methods=['post'], url_path="create-new-catalog")
-    def create_catalog(self, request):      
+    def create_catalog(self, request):    
+        """ form data:
+        - img_data: binary file
+        - img_name: string (name of image)
+        - parent_id = integer (allow null, id of parent catalog)
+        - name: string
+        """  
         img_data = request.data.get('file')  # Nhận dữ liệu ảnh dưới dạng binary
         img_name = request.data.get('file_name')
         parent_id = request.data.get('parent_id')
@@ -209,6 +216,7 @@ class CatalogViewSetDeleteData(viewsets.ViewSet):
     def delete_catalog(self, request):
         """
         Soft delete a catalog and its child catalogs.
+        - query_params: id
         """
         catalog_id = request.query_params.get('id')
 
@@ -256,7 +264,8 @@ class CatalogViewSetRestoreData(viewsets.ViewSet):
     @action(detail=False, methods=['put'], url_path="restore-catalog")
     def restore_catalog(self, request):
         """
-        Restore a catalog and its child catalogs.
+        Restore a catalog and its child catalogs: body data:
+        - id
         """
         catalog_id = request.data.get('id')
         
@@ -305,7 +314,10 @@ class CatalogViewSetEditData(viewsets.ViewSet):
     @action(detail=False, methods=['put'], url_path="edit-catalog")
     def edit_catalog(self, request):
         """
-        Edit catalog details.
+        Edit catalog details. body data:
+        - id: integer (id of catalog)
+        - name: string
+        - description: string
         """
         catalog_id = request.data.get('id')
         name = request.data.get('name')
@@ -337,3 +349,50 @@ class CatalogViewSetEditData(viewsets.ViewSet):
             "status": status.HTTP_200_OK,
             "message": "Catalog updated successfully."
         }, status=status.HTTP_200_OK)
+        
+    @action(detail=False, methods=['put'], url_path="edit-image-catalog")
+    def edit_image_catalog(self, request):
+        """
+        change image of catalog. form body:
+        - id: integer
+        - img_data: binary
+        - img_name: string
+        """
+        catalog_id = request.data.get('id')
+        img_data = request.data.get('file')
+        img_name = request.data.get('file_name')
+        
+        if not catalog_id:
+            return Response({
+                "status": status.HTTP_400_BAD_REQUEST,
+                "message": "Catalog ID is required."
+            }, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            catalog = Catalog.objects.get(id = catalog_id)
+        except Catalog.DoesNotExist:
+            return Response({
+                "status": status.HTTP_404_NOT_FOUND,
+                "message": "Catalog not found or already deleted."
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        if img_name:
+            # Lưu file ảnh vào đường dẫn cục bộ
+            img_path = os.path.join("C:/Users/Mine/Documents/document/PROJECT/DATN/Ecommerce_Images/", img_name)
+            # Đọc dữ liệu từ InMemoryUploadedFile và ghi vào file
+            with open(img_path, 'wb') as img_file:
+                for chunk in img_data.chunks():
+                    img_file.write(chunk)
+
+            # Cập nhật đường dẫn ảnh vào trường image của catalog
+            catalog.image = f'file:///C:/Users/Mine/Documents/document/PROJECT/DATN/Ecommerce_Images/{img_name}'
+            print(catalog)
+            catalog.save()
+            return Response({
+                "status": status.HTTP_200_OK,
+                "message": "Catalog updated image successfully."
+            }, status=status.HTTP_200_OK)
+        else:
+            return Response({
+                "status": 404,
+                "message": "file_name is required"
+            }, status=status.HTTP_200_OK)
