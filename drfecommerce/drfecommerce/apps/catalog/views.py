@@ -102,6 +102,44 @@ class CatalogViewSetGetData(viewsets.ViewSet):
 
         return catalog_data
     
+    @action(detail=False, methods=['get'], url_path="search-catalogs")
+    def search_catalogs(self, request):
+        """
+        API to search products by name with pagination.
+        - page_index (default=1)
+        - page_size (default=10)
+        - name: product name to search
+        """
+        page_index = int(request.GET.get('page_index', 1))
+        page_size = int(request.GET.get('page_size', 10))
+        name_query = request.GET.get('name', '').strip()
+
+        # Lọc sản phẩm theo tên
+        catalogs = Catalog.objects.filter(name__icontains=name_query)
+
+        paginator = Paginator(catalogs, page_size)
+
+        try:
+            paginated_products = paginator.page(page_index)
+        except PageNotAnInteger:
+            paginated_products = paginator.page(1)
+        except EmptyPage:
+            paginated_products = paginator.page(paginator.num_pages)
+
+        serializer = serializerGetCatalog(paginated_products, many=True)
+
+        return Response({
+            "status": status.HTTP_200_OK,
+            "message": "OK",
+            "data": {
+                "total_pages": paginator.num_pages,
+                "total_items": paginator.count,
+                "page_index": page_index,
+                "page_size": page_size,
+                "catalogs": serializer.data
+            }
+        }, status=status.HTTP_200_OK)
+        
     @action(detail=False, methods=['get'], url_path="get-detail-catalog")
     def get_catalog(self, request):
         """
@@ -475,3 +513,40 @@ class PublicCatalogViewSetGetData(viewsets.ViewSet):
 
         return catalog_data
     
+    @action(detail=False, methods=['get'], url_path="search-catalogs")
+    def search_catalogs(self, request):
+        """
+        API to search products by name with pagination.
+        - page_index (default=1)
+        - page_size (default=10)
+        - name: product name to search
+        """
+        page_index = int(request.GET.get('page_index', 1))
+        page_size = int(request.GET.get('page_size', 10))
+        name_query = request.GET.get('name', '').strip()
+
+        # Lọc sản phẩm theo tên
+        catalogs = Catalog.objects.filter(name__icontains=name_query, delete_at__isnull=True)
+
+        paginator = Paginator(catalogs, page_size)
+
+        try:
+            paginated_products = paginator.page(page_index)
+        except PageNotAnInteger:
+            paginated_products = paginator.page(1)
+        except EmptyPage:
+            paginated_products = paginator.page(paginator.num_pages)
+
+        serializer = serializerGetCatalog(paginated_products, many=True)
+
+        return Response({
+            "status": status.HTTP_200_OK,
+            "message": "OK",
+            "data": {
+                "total_pages": paginator.num_pages,
+                "total_items": paginator.count,
+                "page_index": page_index,
+                "page_size": page_size,
+                "catalogs": serializer.data
+            }
+        }, status=status.HTTP_200_OK)
