@@ -54,6 +54,7 @@ urlpatterns = [
     path("api/admin/delete-product/", views_product.ProductViewSet.as_view({'delete': 'delete_product'}), name='admin-delete-product'),
     path("api/admin/restore-product/", views_product.ProductViewSet.as_view({'put': 'restore_product'}), name='admin-restore-product'),
     path("api/admin/edit-product/", views_product.ProductViewSet.as_view({'put': 'edit_product'}), name='admin-edit-product'),
+    path("api/admin/upload-gallery/", views_product.ProductViewSet.as_view({'post': 'upload_gallery'}), name='admin-upload-images'),
     
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/schema/docs", SpectacularSwaggerView.as_view(url_name="schema")),
