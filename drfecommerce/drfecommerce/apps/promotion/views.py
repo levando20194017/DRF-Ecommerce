@@ -5,9 +5,9 @@ from .serializers import PromotionSerializer
 from django.core.paginator import Paginator
 from django.core.paginator import EmptyPage
 from django.core.paginator import PageNotAnInteger
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from drfecommerce.apps.my_admin.authentication import SafeJWTAuthentication
-from rest_framework.decorators import action
+from rest_framework.decorators import action, permission_classes
 from dotenv import load_dotenv
 from django.utils import timezone
 
@@ -248,3 +248,67 @@ class PromotionViewSet(viewsets.ViewSet):
                 "promotions": serializer.data
             }
         }, status=status.HTTP_200_OK)
+        
+@permission_classes([AllowAny])
+class PublicPromotionViewSet(viewsets.ViewSet):
+    @action(detail=False, methods=['get'], url_path="get-list-promotions")
+    def list_promotions(self, request):
+        """
+        Get list of promotions with pagination.
+
+        Parameters:
+        - page_index: The index of the page (default is 1).
+        - page_size: The number of items per page (default is 10).
+        """
+        page_index = int(request.GET.get('page_index', 1))
+        page_size = int(request.GET.get('page_size', 10))
+
+        promotions = Promotion.objects.filter(delete_at__isnull = True)  # Chỉ lấy các promotion chưa bị xóa mềm
+        paginator = Paginator(promotions, page_size)
+
+        try:
+            paginated_promotions = paginator.page(page_index)
+        except PageNotAnInteger:
+            paginated_promotions = paginator.page(1)
+        except EmptyPage:
+            paginated_promotions = paginator.page(paginator.num_pages)
+
+        serializer = PromotionSerializer(paginated_promotions, many=True)
+
+        return Response({
+            "status": status.HTTP_200_OK,
+            "message": "OK",
+            "data": {
+                "total_pages": paginator.num_pages,
+                "total_items": paginator.count,
+                "page_index": page_index,
+                "page_size": page_size,
+                "promotions": serializer.data
+            }
+        }, status=status.HTTP_200_OK)
+        
+    @action(detail=False, methods=['get'], url_path="get-dettail-promotion")
+    def get_promotion(self, request):
+        """
+        Get promotion details: body data:
+        - id
+        """
+        promotion_id = request.query_params.get('id')
+        if not promotion_id:
+            return Response({
+                "status": status.HTTP_400_BAD_REQUEST,
+                "message": "Promotion ID is required."
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            promotion = Promotion.objects.get(id=promotion_id, delete_at__isnull = True)
+            serializer = PromotionSerializer(promotion)
+            return Response({
+                "status": status.HTTP_200_OK,
+                "data": serializer.data
+            }, status=status.HTTP_200_OK)
+        except Promotion.DoesNotExist:
+            return Response({
+                "status": status.HTTP_404_NOT_FOUND,
+                "message": "Promotion not found."
+            }, status=status.HTTP_404_NOT_FOUND)

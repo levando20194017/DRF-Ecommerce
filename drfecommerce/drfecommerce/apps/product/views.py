@@ -58,6 +58,44 @@ class ProductViewSet(viewsets.ViewSet):
             }
         }, status=status.HTTP_200_OK)   
 
+    @action(detail=False, methods=['get'], url_path="search-products")
+    def search_products(self, request):
+        """
+        API to search products by name with pagination.
+        - page_index (default=1)
+        - page_size (default=10)
+        - name: product name to search
+        """
+        page_index = int(request.GET.get('page_index', 1))
+        page_size = int(request.GET.get('page_size', 10))
+        name_query = request.GET.get('name', '').strip()
+
+        # Lọc sản phẩm theo tên
+        products = Product.objects.filter(name__icontains=name_query)
+
+        paginator = Paginator(products, page_size)
+
+        try:
+            paginated_products = paginator.page(page_index)
+        except PageNotAnInteger:
+            paginated_products = paginator.page(1)
+        except EmptyPage:
+            paginated_products = paginator.page(paginator.num_pages)
+
+        serializer = ProductSerializer(paginated_products, many=True)
+
+        return Response({
+            "status": status.HTTP_200_OK,
+            "message": "OK",
+            "data": {
+                "total_pages": paginator.num_pages,
+                "total_items": paginator.count,
+                "page_index": page_index,
+                "page_size": page_size,
+                "products": serializer.data
+            }
+        }, status=status.HTTP_200_OK)
+        
     @action(detail=False, methods=['post'], url_path="create-product")
     def create_product(self, request):
         """
@@ -465,3 +503,43 @@ class PublicProductViewset(viewsets.ViewSet):
                     "products": serializer.data
                 }
             }, status=status.HTTP_200_OK)
+        
+    @action(detail=False, methods=['get'], url_path="search-products")
+    def search_products(self, request):
+        """
+        API to search products by name with pagination.
+        - page_index (default=1)
+        - page_size (default=10)
+        - name: product name to search
+        """
+        page_index = int(request.GET.get('page_index', 1))
+        page_size = int(request.GET.get('page_size', 10))
+        name_query = request.GET.get('name')
+        
+        if name_query is None or name_query == "":
+            products = Product.objects.filter(delete_at__isnull=True)
+        else:
+            products = Product.objects.filter(name__icontains=name_query, delete_at__isnull=True)
+
+        paginator = Paginator(products, page_size)
+
+        try:
+            paginated_products = paginator.page(page_index)
+        except PageNotAnInteger:
+            paginated_products = paginator.page(1)
+        except EmptyPage:
+            paginated_products = paginator.page(paginator.num_pages)
+
+        serializer = ProductSerializer(paginated_products, many=True)
+
+        return Response({
+            "status": status.HTTP_200_OK,
+            "message": "OK",
+            "data": {
+                "total_pages": paginator.num_pages,
+                "total_items": paginator.count,
+                "page_index": page_index,
+                "page_size": page_size,
+                "products": serializer.data
+            }
+        }, status=status.HTTP_200_OK)
