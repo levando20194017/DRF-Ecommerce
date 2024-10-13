@@ -38,8 +38,10 @@ urlpatterns = [
     path("api/admin/restore-catalog/", views_catalog.CatalogViewSetRestoreData.as_view({'put': 'restore_catalog'}), name='admin-restore-catalog'),
     path("api/admin/edit-catalog/", views_catalog.CatalogViewSetEditData.as_view({'put': 'edit_catalog'}), name='admin-edit-catalog'),
     path("api/admin/get-detail-catalog/", views_catalog.CatalogViewSetGetData.as_view({'get': 'get_catalog'}), name='admin-get-detail-catalog'),
+    path("api/admin/search-catalogs/", views_catalog.CatalogViewSetGetData.as_view({'get': 'search_catalogs'}), name='admin-search-catalogs'),
     #---public
     path("api/get-list-catalogs/", views_catalog.PublicCatalogViewSetGetData.as_view({'get': 'list_catalogs'}), name='get-list-catalogs'),
+    path("api/search-catalogs/", views_catalog.PublicCatalogViewSetGetData.as_view({'get': 'search_catalogs'}), name='search-catalogs'),
     
     #promotion
     #---private
@@ -49,9 +51,11 @@ urlpatterns = [
     path("api/admin/restore-promotion/", views_promotion.PromotionViewSet.as_view({'put': 'restore_promotion'}), name='admin-restore-promotion'),
     path("api/admin/edit-promotion/", views_promotion.PromotionViewSet.as_view({'put': 'edit_promotion'}), name='admin-edit-promotion'),
     path("api/admin/get-detail-promotion/", views_promotion.PromotionViewSet.as_view({'get': 'get_promotion'}), name='admin-get-detail-promotion'),
+    path("api/admin/search-promotions/", views_promotion.PromotionViewSet.as_view({'get': 'search_promotions'}), name='admin-search-promotions'),
     #---public
     path("api/get-list-promotions/", views_promotion.PublicPromotionViewSet.as_view({'get': 'list_promotions'}), name='get-list-promotions'),
     path("api/get-detail-promotion/", views_promotion.PublicPromotionViewSet.as_view({'get': 'get_promotion'}), name='get-detail-promotion'),
+    path("api/search-promotions/", views_promotion.PublicPromotionViewSet.as_view({'get': 'search_promotions'}), name='search-promotions'),
     
     #product
     #--public route
