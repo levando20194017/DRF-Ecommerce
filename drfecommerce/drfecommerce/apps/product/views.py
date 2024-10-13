@@ -356,3 +356,112 @@ class PublicProductViewset(viewsets.ViewSet):
                 "message": "Product not found."
             }, status=status.HTTP_404_NOT_FOUND)
             
+    @action(detail=False, methods=['get'], url_path="get-list-products-by-catalog")
+    def list_products_by_catalog(self, request):
+        """
+        API to get list of products with pagination.
+        - page_index (default=1)
+        - page_size (default=10)
+        - catalog_id: int
+        example api/get-list-products/?page_index=1&page_size=10&catalog_id=1
+        """
+        page_index = int(request.GET.get('page_index', 1))
+        page_size = int(request.GET.get('page_size', 10))
+        catalog_id = request.GET.get('catalog_id') if request.GET.get('catalog_id') else None
+        
+        if not catalog_id:
+            return Response({
+            "status": status.HTTP_200_OK,
+            "message": "OK",
+            "data": {
+            "status": 404,
+            "message": "Catalog not found"
+            }})
+        
+        try:
+            catalog = Catalog.objects.get(id = catalog_id)
+            if catalog.delete_at is not None:
+                return Response({
+                "status": status.HTTP_404_NOT_FOUND,
+                "message": "Catalog not found."
+            }, status=status.HTTP_404_NOT_FOUND)
+        except Catalog.DoesNotExist:
+            return Response({
+                "status": status.HTTP_404_NOT_FOUND,
+                "message": "Catalog not found."
+            }, status=status.HTTP_404_NOT_FOUND)
+            
+        products = Product.objects.filter(catalog_id = catalog_id, delete_at__isnull=True)
+        paginator = Paginator(products, page_size)
+        
+        try:
+            paginated_products = paginator.page(page_index)
+        except PageNotAnInteger:
+            paginated_products = paginator.page(1)
+        except EmptyPage:
+            paginated_products = paginator.page(paginator.num_pages)
+
+        serializer = ProductSerializer(paginated_products, many=True)
+
+        return Response({
+            "status": status.HTTP_200_OK,
+            "message": "OK",
+            "data": {
+                "total_pages": paginator.num_pages,
+                "total_items": paginator.count,
+                "page_index": page_index,
+                "page_size": page_size,
+                "products": serializer.data
+            }
+        }, status=status.HTTP_200_OK)
+        
+    @action(detail=False, methods=['get'], url_path="get-list-products-by-promotion")
+    def list_products_by_promotion(self, request):
+        """
+        API to get list of products with pagination.
+        - page_index (default=1)
+        - page_size (default=10)
+        - promotion_id: int
+        example api/get-list-products/?page_index=1&page_size=10&promotion_id=1
+        """
+        page_index = int(request.GET.get('page_index', 1))
+        page_size = int(request.GET.get('page_size', 10))
+        promotion_id = int(request.GET.get('promotion_id')) if request.GET.get('promotion_id') else None
+        
+        # xét 2 trường hợp sản phẩm được khuyễn mãi và sản phẩm không được khuyến mãi (promotion_id = null)
+        if promotion_id:  
+            try:
+                promotion = Promotion.objects.get(id = promotion_id)
+                if promotion.delete_at is not None:
+                    return Response({
+                    "status": status.HTTP_404_NOT_FOUND,
+                    "message": "Promotion not found."
+                }, status=status.HTTP_404_NOT_FOUND)
+            except Promotion.DoesNotExist:
+                return Response({
+                    "status": status.HTTP_404_NOT_FOUND,
+                    "message": "Promotion not found."
+                }, status=status.HTTP_404_NOT_FOUND)
+                
+        products = Product.objects.filter(promotion_id = promotion_id, delete_at__isnull=True)
+        paginator = Paginator(products, page_size)
+            
+        try:
+            paginated_products = paginator.page(page_index)
+        except PageNotAnInteger:
+            paginated_products = paginator.page(1)
+        except EmptyPage:
+            paginated_products = paginator.page(paginator.num_pages)
+
+        serializer = ProductSerializer(paginated_products, many=True)
+        return Response({
+                "status": status.HTTP_200_OK,
+                "message": "OK",
+                "data": {
+                    "total_pages": paginator.num_pages,
+                    "total_items": paginator.count,
+                    "page_index": page_index,
+                    "page_size": page_size,
+                    "products": serializer.data
+                }
+            }, status=status.HTTP_200_OK)
