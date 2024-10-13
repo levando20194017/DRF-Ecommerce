@@ -13,6 +13,10 @@ from drfecommerce.apps.my_admin.authentication import SafeJWTAuthentication
 from rest_framework.decorators import action,permission_classes
 from dotenv import load_dotenv
 from django.utils import timezone
+import os
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
+from drfecommerce.settings import base
 
 # Load environment variables from .env file
 load_dotenv()
@@ -258,6 +262,37 @@ class ProductViewSet(viewsets.ViewSet):
             "status": status.HTTP_200_OK,
             "message": "Product restored successfully."
         }, status=status.HTTP_200_OK)
+    
+    @action(detail=False, methods=['post'], url_path="upload-gallery")
+    def upload_gallery(self, request):
+        """
+        form-data: files
+        """
+        if 'files' not in request.FILES:
+            return Response({
+                "status": status.HTTP_400_BAD_REQUEST,
+                "message": "No image files found in request."
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        files = request.FILES.getlist('files')  # Lấy danh sách các file từ request
+        image_urls = []  # Danh sách lưu URL của các ảnh đã upload
+
+        for image in files:
+            img_name = image.name
+
+            # Sử dụng default_storage để lưu ảnh vào thư mục cục bộ hoặc dịch vụ lưu trữ khác trong tương lai
+            save_path = os.path.join(base.MEDIA_ROOT, img_name)
+            file_path = default_storage.save(save_path, ContentFile(image.read()))
+            file_url = default_storage.url(file_path)
+
+            # Lưu URL của ảnh vào danh sách
+            image_urls.append(file_url)
+
+        return Response({
+            "status": status.HTTP_200_OK,
+            "message": "Images uploaded successfully!",
+            "image_urls": image_urls  # Trả về danh sách các URL của ảnh đã upload
+        }, status=status.HTTP_200_OK)
         
 @permission_classes([AllowAny])
 class PublicProductViewset(viewsets.ViewSet):
@@ -320,3 +355,4 @@ class PublicProductViewset(viewsets.ViewSet):
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Product not found."
             }, status=status.HTTP_404_NOT_FOUND)
+            
