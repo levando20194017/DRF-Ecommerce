@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     "drfecommerce.apps.catalog",
     "drfecommerce.apps.category",
     "drfecommerce.apps.my_admin",
+    "drfecommerce.apps.cart",
     "drfecommerce.apps.order",
     "drfecommerce.apps.order_detail",
     "drfecommerce.apps.payment",
