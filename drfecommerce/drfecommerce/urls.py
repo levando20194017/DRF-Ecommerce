@@ -73,6 +73,7 @@ urlpatterns = [
     path("api/admin/upload-gallery/", views_product.ProductViewSet.as_view({'post': 'upload_gallery'}), name='admin-upload-images'),
     path("api/admin/search-products/", views_product.ProductViewSet.as_view({'get': 'search_products'}), name='admin-search-products'),
     
+    #order
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/schema/docs", SpectacularSwaggerView.as_view(url_name="schema")),
 ]+ static(base.MEDIA_URL, document_root=base.MEDIA_ROOT)

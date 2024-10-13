@@ -11,6 +11,11 @@ class Order(models.Model):
     order_status = models.CharField(max_length=50)
     gst_amount = models.FloatField()
     shipping_cost = models.FloatField()
+    
+    # shipping_address = models.CharField(max_length=255)
+    # recipient_phone = models.CharField(max_length=20)
+    # recipient_name = models.CharField(max_length=100)
+    
     location_pickup = models.CharField(max_length=255)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
