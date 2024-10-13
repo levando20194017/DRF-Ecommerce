@@ -16,7 +16,8 @@ class CartItem(models.Model):
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name='items')  # Một giỏ hàng có thể có nhiều sản phẩm
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.IntegerField(default=1)  # Số lượng sản phẩm trong giỏ hàng
-    added_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f'CartItem {self.id} - Product: {self.product.name} - Quantity: {self.quantity}'
