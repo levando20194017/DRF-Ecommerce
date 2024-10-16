@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     "drfecommerce.apps.order_detail",
     "drfecommerce.apps.payment",
     "drfecommerce.apps.product",
+    "drfecommerce.apps.review",
     "drfecommerce.apps.product_store",
     "drfecommerce.apps.promotion",
     "drfecommerce.apps.setting",
