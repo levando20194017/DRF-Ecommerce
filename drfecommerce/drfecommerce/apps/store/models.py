@@ -7,7 +7,7 @@ class Store(models.Model):
     phone_number = models.CharField(max_length=20)
     email = models.EmailField()
     address = models.CharField(max_length=255)
-    postal_code = models.CharField(max_length=20)
+    postal_code = models.CharField(max_length=20, blank=True, null=True)
     opening_hours = models.TimeField()
     closing_hours = models.TimeField()
     created_at = models.DateTimeField(default=timezone.now)

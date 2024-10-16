@@ -8,6 +8,7 @@ from drfecommerce.apps.catalog import views as views_catalog
 from drfecommerce.apps.promotion import views as views_promotion
 from drfecommerce.apps.product import views as views_product
 from drfecommerce.apps.cart import views as views_cart
+from drfecommerce.apps.store import views as views_store
 from drfecommerce.settings import base
 from django.conf.urls.static import static
 
@@ -78,6 +79,16 @@ urlpatterns = [
     path("api/product/admin/edit-product/", views_product.ProductViewSet.as_view({'put': 'edit_product'}), name='admin-edit-product'),
     path("api/product/admin/upload-gallery/", views_product.ProductViewSet.as_view({'post': 'upload_gallery'}), name='admin-upload-images'),
     path("api/product/admin/search-products/", views_product.ProductViewSet.as_view({'get': 'search_products'}), name='admin-search-products'),
+    
+    #store
+    #--private route
+    path("api/store/admin/get-list-stores/", views_store.StoreViewSet.as_view({'get': 'list_stores'}), name='admin-get-list-stores'),
+    path("api/store/admin/search-stores/", views_store.StoreViewSet.as_view({'get': 'search_stores'}), name='admin-search-stores'),
+    path("api/store/admin/create-new-store/", views_store.StoreViewSet.as_view({'post': 'create_store'}), name='admin-create-new-store'),
+    path("api/store/admin/delete-store/", views_store.StoreViewSet.as_view({'delete': 'delete_store'}), name='admin-delete-store'),
+    path("api/store/admin/restore-store/", views_store.StoreViewSet.as_view({'put': 'restore_store'}), name='admin-restore-store'),
+    path("api/store/admin/edit-store/", views_store.StoreViewSet.as_view({'put': 'edit_store'}), name='admin-edit-store'),
+    path("api/store/admin/get-detail-store/", views_store.StoreViewSet.as_view({'get': 'get_store'}), name='admin-get-detail-store'),
     
     #order
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
