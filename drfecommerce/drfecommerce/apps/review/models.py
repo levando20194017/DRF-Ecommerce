@@ -2,12 +2,14 @@ from django.db import models
 from drfecommerce.apps.guest.models import Guest
 from drfecommerce.apps.product.models import Product
 from drfecommerce.apps.order_detail.models import OrderDetail
+from drfecommerce.apps.store.models import Store
 from django.utils import timezone
 
 class Review(models.Model):
     id = models.AutoField(primary_key=True)
     guest = models.ForeignKey(Guest, on_delete=models.CASCADE)  # The user submitting the review
     product = models.ForeignKey(Product, on_delete=models.CASCADE)  # The product being reviewed
+    store = models.ForeignKey(Store, on_delete=models.CASCADE)  # The store being reviewed
     order_detail = models.ForeignKey(OrderDetail, on_delete=models.SET_NULL, null=True, blank=True)  # Link to the order detail
     rating = models.IntegerField()  # Rating, e.g., 1-5 stars
     comment = models.TextField(blank=True, null=True)  # Optional review comment
