@@ -8,4 +8,7 @@ class ProductStore(models.Model):
     store = models.ForeignKey(Store, on_delete=models.PROTECT, null=True, blank=True)
     product = models.ForeignKey(Product, on_delete=models.PROTECT, null=True, blank=True)
     quantity = models.IntegerField()
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    delete_at = models.DateTimeField(null=True, blank=True, default=None)
 
