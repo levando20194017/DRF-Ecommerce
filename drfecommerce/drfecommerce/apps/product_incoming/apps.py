@@ -1,6 +1,6 @@
 from django.apps import AppConfig
 
 
-class ProductImcomingConfig(AppConfig):
+class ProductIncomingConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
-    name = "drfecommerce.apps.product_imcoming"
+    name = "drfecommerce.apps.product_incoming"
