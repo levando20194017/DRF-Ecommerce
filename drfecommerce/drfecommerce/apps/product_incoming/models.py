@@ -3,7 +3,7 @@ from drfecommerce.apps.store.models import Store
 from drfecommerce.apps.product.models import Product
 from django.utils import timezone
 
-class ProductImcoming(models.Model):
+class ProductIncoming(models.Model):
     #liên quan đến sản phẩm nhập về
     id = models.AutoField(primary_key=True)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)

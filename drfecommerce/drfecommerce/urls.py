@@ -9,6 +9,7 @@ from drfecommerce.apps.promotion import views as views_promotion
 from drfecommerce.apps.product import views as views_product
 from drfecommerce.apps.cart import views as views_cart
 from drfecommerce.apps.store import views as views_store
+from drfecommerce.apps.product_incoming import views as views_product_incoming
 from drfecommerce.settings import base
 from django.conf.urls.static import static
 
@@ -79,6 +80,14 @@ urlpatterns = [
     path("api/product/admin/edit-product/", views_product.ProductViewSet.as_view({'put': 'edit_product'}), name='admin-edit-product'),
     path("api/product/admin/upload-gallery/", views_product.ProductViewSet.as_view({'post': 'upload_gallery'}), name='admin-upload-images'),
     path("api/product/admin/search-products/", views_product.ProductViewSet.as_view({'get': 'search_products'}), name='admin-search-products'),
+    
+    #product_incoming (liên quan đến sản phẩm nhập vào)
+    path("api/product_incoming/admin/list-product-incomings/", views_product_incoming.ProductIncomingViewSet.as_view({'get': 'list_product_incomings'}), name='admin-get-list-product-incomings'),
+    path("api/product_incoming/admin/create-product-incoming/", views_product_incoming.ProductIncomingViewSet.as_view({'post': 'add_product_incoming'}), name='admin-create-new-product-incoming'),
+    path("api/product_incoming/admin/delete-product-incoming/", views_product_incoming.ProductIncomingViewSet.as_view({'delete': 'delete_product_incoming'}), name='admin-delete-product-incoming'),
+    path("api/product_incoming/admin/detail-product-incoming/", views_product_incoming.ProductIncomingViewSet.as_view({'get': 'detail_product_incoming'}), name='admin-get-detail-product-incomings'),
+    path("api/product_incoming/admin/search_product_incomings/", views_product_incoming.ProductIncomingViewSet.as_view({'get': 'search_product_incomings'}), name='admin-search-product-incomings'),
+    path("api/product_incoming/admin/expenditure-statistics/", views_product_incoming.ProductIncomingViewSet.as_view({'get': 'expenditure_statistics'}), name='admin-get-expenditure-statistics'),
     
     #store
     #--private route
