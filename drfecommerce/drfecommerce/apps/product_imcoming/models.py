@@ -4,6 +4,7 @@ from drfecommerce.apps.product.models import Product
 from django.utils import timezone
 
 class ProductImcoming(models.Model):
+    #liên quan đến sản phẩm nhập về
     id = models.AutoField(primary_key=True)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     store = models.ForeignKey(Store, on_delete=models.CASCADE)
