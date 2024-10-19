@@ -5,8 +5,12 @@ from rest_framework.permissions import IsAuthenticated
 from .models import Cart, CartItem
 from drfecommerce.apps.product.models import Product
 from drfecommerce.apps.guest.models import Guest
+from drfecommerce.apps.store.models import Store
 from .serializers import CartSerializer, CartItemSerializer
 from drfecommerce.apps.guest.authentication import SafeJWTAuthentication
+from django.core.paginator import Paginator
+from django.core.paginator import EmptyPage
+from django.core.paginator import PageNotAnInteger
 
 class CartViewSet(viewsets.ViewSet):
     authentication_classes = [SafeJWTAuthentication]
@@ -53,7 +57,7 @@ class CartViewSet(viewsets.ViewSet):
         if not guest_id:
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
-                "message": "Promotion ID is required."
+                "message": "Guest ID is required."
             }, status=status.HTTP_400_BAD_REQUEST)
             
         try: 
@@ -78,13 +82,15 @@ class CartViewSet(viewsets.ViewSet):
         Add a product to the user's cart.
         Required body data:
         - id: guest_id int
+        - store_id: id of store
         - product_id: int
         - quantity: int (optional, default=1)
         """
         product_id = request.data.get('product_id')
         quantity = request.data.get('quantity', 1)
         guest_id = request.data.get('id')
-            
+        store_id = request.data.get('store_id')
+        
         try: 
             guest = Guest.objects.get(id = guest_id)
         except Guest.DoesNotExist:
@@ -101,10 +107,18 @@ class CartViewSet(viewsets.ViewSet):
                 "message": "Product not found."
             }, status=status.HTTP_404_NOT_FOUND)
             
+        try:
+            store = Store.objects.get(id=store_id)
+        except Store.DoesNotExist:
+            return Response({
+                "status": status.HTTP_404_NOT_FOUND,
+                "message": "Store not found."
+            }, status=status.HTTP_404_NOT_FOUND)
+            
         # Kiểm tra nếu giỏ hàng đã tồn tại, nếu không sẽ tạo giỏ hàng mới
         cart, created = Cart.objects.get_or_create(guest=guest)
         # Kiểm tra nếu sản phẩm đã có trong giỏ hàng, nếu có thì cập nhật số lượng
-        cart_item, created = CartItem.objects.get_or_create(cart=cart, product=product)
+        cart_item, created = CartItem.objects.get_or_create(cart=cart, product=product, store = store)
 
         if not created:
             # Nếu sản phẩm đã có trong giỏ hàng, tăng số lượng sản phẩm
@@ -200,3 +214,60 @@ class CartViewSet(viewsets.ViewSet):
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Cart item not found."
             }, status=status.HTTP_404_NOT_FOUND)
+
+    # @action(detail=False, methods=['get'], url_path='get-cart-items')
+    # def get_cart_items(self, request):
+    #     """
+    #     Retrieve all items in a cart by cart_id with pagination.
+        
+    #     Parameters:
+    #     - guest_id: ID of the guest
+    #     - page_index: The index of the page (default is 1).
+    #     - page_size: The number of items per page (default is 10).
+    #     """
+    #     guest_id = request.query_params.get('guest_id')
+    #     if not guest_id:
+    #         return Response({
+    #             "status": status.HTTP_400_BAD_REQUEST,
+    #             "message": "Guest ID is required."
+    #         }, status=status.HTTP_400_BAD_REQUEST)
+            
+    #     try:
+    #         cart = Cart.objects.get(guest_id = guest_id)
+    #     except Cart.DoesNotExist:
+    #         return Response({
+    #             "status": status.HTTP_404_NOT_FOUND,
+    #             "message": "Cart not found."
+    #         }, status=status.HTTP_404_NOT_FOUND)
+
+    #     # Pagination settings
+    #     page_index = int(request.GET.get('page_index', 1))
+    #     page_size = int(request.GET.get('page_size', 10))
+
+    #     # Get all cart items for the cart
+    #     cart_items = CartItem.objects.filter(cart=cart)
+
+    #     # Paginate the cart items
+    #     paginator = Paginator(cart_items, page_size)
+
+    #     try:
+    #         paginated_items = paginator.page(page_index)
+    #     except PageNotAnInteger:
+    #         paginated_items = paginator.page(1)
+    #     except EmptyPage:
+    #         paginated_items = paginator.page(paginator.num_pages)
+
+    #     # Serialize the data
+    #     serializer = CartItemSerializer(paginated_items, many=True)
+
+    #     return Response({
+    #         "status": status.HTTP_200_OK,
+    #         "message": "OK",
+    #         "data": {
+    #             "total_pages": paginator.num_pages,
+    #             "total_items": paginator.count,
+    #             "page_index": page_index,
+    #             "page_size": page_size,
+    #             "cart_items": serializer.data
+    #         }
+    #     }, status=status.HTTP_200_OK)
