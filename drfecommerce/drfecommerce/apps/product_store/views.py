@@ -5,7 +5,7 @@ from django.utils import timezone
 from drfecommerce.apps.product.models import Product
 from drfecommerce.apps.store.models import Store
 from .models import ProductStore
-from .serializers import ProductStoreSerializer, StoreHasProductSerializer
+from .serializers import ProductStoreSerializer, StoreHasProductSerializer, DetailProductStoreSerializer
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from drfecommerce.apps.my_admin.authentication import SafeJWTAuthentication
 from django.core.paginator import Paginator
@@ -259,5 +259,48 @@ class PublicProductStoreViewSet(viewsets.ModelViewSet):
                 "page_index": page_index,
                 "page_size": page_size,
                 "stores": serializer.data
+            }
+        }, status=status.HTTP_200_OK)
+        
+    @action(detail=False, methods=['get'], url_path='detail-of-product-and-store')
+    def detail_product_store(self, request):
+        """
+        API lấy danh sách cửa hàng mà tại đó có bán sản phẩm => áp dụng phía người dùng
+        query_params:
+        - product_id: ID của product để lọc
+        - store_id: ID của store
+        """
+        product_id = request.GET.get('product_id')
+        store_id = request.GET.get('store_id')
+
+        if not product_id:
+            return Response({"message": "Product ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+        if not store_id:
+            return Response({"message": "Store ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            product = Product.objects.get(id = product_id)
+        except Product.DoesNotExist:
+            return Response({
+                "status": status.HTTP_404_NOT_FOUND,
+                "message": "Product not found."
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        try:
+            store = Store.objects.get(id = store_id)
+        except Store.DoesNotExist:
+            return Response({
+                "status": status.HTTP_404_NOT_FOUND,
+                "message": "Store not found."
+            }, status=status.HTTP_404_NOT_FOUND)
+                
+        detail_product = ProductStore.objects.filter(product = product, store= store)
+            
+        serializer = DetailProductStoreSerializer(detail_product, many=True)
+        
+        return Response({
+            "status": status.HTTP_200_OK,
+            "message": "OK",
+            "data": {
+                'product': serializer.data
             }
         }, status=status.HTTP_200_OK)
