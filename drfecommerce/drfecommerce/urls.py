@@ -10,6 +10,7 @@ from drfecommerce.apps.product import views as views_product
 from drfecommerce.apps.cart import views as views_cart
 from drfecommerce.apps.store import views as views_store
 from drfecommerce.apps.product_incoming import views as views_product_incoming
+from drfecommerce.apps.product_store import views as views_product_store
 from drfecommerce.settings import base
 from django.conf.urls.static import static
 
@@ -88,7 +89,7 @@ urlpatterns = [
     path("api/product_incoming/admin/detail-product-incoming/", views_product_incoming.ProductIncomingViewSet.as_view({'get': 'detail_product_incoming'}), name='admin-get-detail-product-incomings'),
     path("api/product_incoming/admin/search_product_incomings/", views_product_incoming.ProductIncomingViewSet.as_view({'get': 'search_product_incomings'}), name='admin-search-product-incomings'),
     path("api/product_incoming/admin/expenditure-statistics/", views_product_incoming.ProductIncomingViewSet.as_view({'get': 'expenditure_statistics'}), name='admin-get-expenditure-statistics'),
-    
+
     #store
     #--private route
     path("api/store/admin/get-list-stores/", views_store.StoreViewSet.as_view({'get': 'list_stores'}), name='admin-get-list-stores'),
@@ -98,6 +99,14 @@ urlpatterns = [
     path("api/store/admin/restore-store/", views_store.StoreViewSet.as_view({'put': 'restore_store'}), name='admin-restore-store'),
     path("api/store/admin/edit-store/", views_store.StoreViewSet.as_view({'put': 'edit_store'}), name='admin-edit-store'),
     path("api/store/admin/get-detail-store/", views_store.StoreViewSet.as_view({'get': 'get_store'}), name='admin-get-detail-store'),
+
+    #product_store
+    #--private route
+    path("api/product_store/admin/search-products-in-store/", views_product_store.ProductStoreViewSet.as_view({'get': 'search_products_in_store'}), name='admin-search-products-in-store'),
+    path("api/product_store/admin/soft-delete-product-of-store/", views_product_store.ProductStoreViewSet.as_view({'delete': 'soft_delete'}), name='admin-delet-product-in-store'),
+    #--public route
+    #api hiển thị các cửa hàng chứa product
+    path("api/product_store/search-stores-has-product/", views_product_store.PublicProductStoreViewSet.as_view({'get': 'search_stores_by_product'}), name='search-stores-has-product'),
     
     #order
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
