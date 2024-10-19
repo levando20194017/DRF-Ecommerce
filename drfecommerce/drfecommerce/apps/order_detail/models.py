@@ -14,6 +14,7 @@ class OrderDetail(models.Model):
     product_part_number = models.CharField(max_length=50)
     quantity = models.IntegerField()
     unit_price = models.FloatField()
+    location_pickup = models.CharField(max_length=255)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     delete_at = models.DateTimeField(null=True, blank=True, default=None)
