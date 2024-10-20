@@ -178,9 +178,20 @@ SPECTACULAR_SETTINGS = {
     "TITLE": "Django DRF Ecommerce",
 }
 
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587  # hoặc 465 nếu cần SSL
-EMAIL_USE_TLS = False  # hoặc False nếu không cần TLS
-EMAIL_HOST_USER = os.environ.get("EMAIL")
-EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_PASSWORD")
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# EMAIL_HOST = 'smtp.gmail.com'
+# EMAIL_PORT = 587  # hoặc 465 nếu cần SSL
+# EMAIL_USE_TLS = False  # hoặc False nếu không cần TLS
+# EMAIL_HOST_USER = os.environ.get("EMAIL")
+# EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_PASSWORD")
+
+# Email settings
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'  # Use SMTP backend
+EMAIL_HOST = 'smtp.gmail.com'  # e.g., smtp.gmail.com for Gmail
+EMAIL_PORT = 587  # or 465 for SSL
+EMAIL_USE_TLS = True  # Set to True for TLS; False for SSL
+EMAIL_USE_SSL = False  # Set to True for TLS; False for SSL
+EMAIL_HOST_USER = os.environ.get("EMAIL")  # Your email address
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_PASSWORD")  # Your email password
+DEFAULT_FROM_EMAIL = 'VIVAFLOWER <no-reply@yourdomain.com>'
+ADMIN_EMAIL = 'levando20194017@gmail.com'  # Admin email for notifications

@@ -19,7 +19,7 @@ class Order(models.Model):
         default='pending'
     )
     order_date = models.DateTimeField(default=timezone.now)
-    payment_method = models.CharField(max_length=50, choices=[('credit_card', 'Credit Card'), ('bank_transfer', 'Bank Transfer'), ('cash_on_delivery', 'Cash on Delivery'), ('e_wallet', 'E-Wallet')], default='credit_card')
+    payment_method = models.CharField(max_length=50, choices=[('credit_card', 'Credit Card'), ('bank_transfer', 'Bank Transfer'), ('cash_on_delivery', 'Cash on Delivery'), ('e_wallet', 'E-Wallet')], default='cash_on_delivery')
     payment_status = models.CharField(max_length=50, choices=[('unpaid', 'Unpaid'), ('paid', 'Paid'), ('failed', 'Failed')], default='unpaid')
     gst_amount = models.FloatField()
     shipping_cost = models.FloatField()
