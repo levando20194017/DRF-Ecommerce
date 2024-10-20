@@ -113,6 +113,7 @@ urlpatterns = [
     
     #order
     path("api/order/create-new-order/", views_order.OrderViewSet.as_view({'post': 'create_new_order'}), name='create-new-order'),
+    path("api/order/cancel-order/", views_order.OrderViewSet.as_view({'put': 'cancel_order'}), name='cancel-order'),
     
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/schema/docs", SpectacularSwaggerView.as_view(url_name="schema")),

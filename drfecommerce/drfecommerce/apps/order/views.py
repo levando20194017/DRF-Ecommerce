@@ -8,6 +8,7 @@ from drfecommerce.apps.order_detail.serializers import OrderDetailSerializer
 from drfecommerce.apps.payment.serializers import PaymentSerializer
 from drfecommerce.apps.order_detail.models import OrderDetail
 from drfecommerce.apps.product.models import Product
+from drfecommerce.apps.cart.models import Cart, CartItem
 from drfecommerce.apps.product_store.models import ProductStore
 from drfecommerce.apps.store.models import Store
 from drfecommerce.apps.guest.models import Guest
@@ -114,6 +115,20 @@ class OrderViewSet(viewsets.ViewSet):
                     location_pickup=store.address
                 )
 
+            # Step 3: Xử lý các sản phẩm trong giỏ hàng sau khi tạo đơn hàng thành công
+            #Check nếu nó nằm trong giỏ hàng thì loại bỏ nó đi
+            cart = Cart.objects.filter(guest_id=guest_id).first()
+            if cart:
+                for detail in order_details:
+                    product = get_object_or_404(Product, id=detail['product_id'])
+                    store = get_object_or_404(Store, id=detail['store_id'])
+                    
+                    # Kiểm tra sản phẩm có trong giỏ hàng không
+                    cart_item = CartItem.objects.filter(cart=cart, product=product, store=store).first()
+                    if cart_item:
+                        # Nếu có, loại bỏ nó ra khỏi giỏ hàng
+                        cart_item.delete()
+            
             # Handle payment processing
             payment_method = data['payment_methods']
             if payment_method == "e_wallet":
@@ -268,3 +283,61 @@ class OrderViewSet(viewsets.ViewSet):
 
         # Log gửi email
         print(f"Email sent to admin: {base.ADMIN_EMAIL} for Order {order.id}")
+        
+    @action(detail=True, methods=['put'], url_path="cancel-order")
+    def cancel_order(self, request):
+        """
+        order_id: id of order
+        """
+        order_id = request.data.get('order_id')
+        try:
+            # Get the order by its primary key (id)
+            order = Order.objects.get(id=order_id)
+
+            # Check if the order status is 'pending'
+            if order.order_status == 'pending':
+                # Update the order status to 'cancel'
+                order.order_status = 'cancelled'
+                order.save()
+
+                # Send email notification to the admin
+                self.send_order_cancellation_email(order)
+
+                return Response({
+                    'message': 'Order successfully canceled.',
+                    'status': status.HTTP_200_OK
+                    }, status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error': 'Order cannot be canceled because it is not in pending status.',
+                    'status': status.HTTP_400_BAD_REQUEST
+                    }, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        except Order.DoesNotExist:
+            return Response({'error': 'Order not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+    def send_order_cancellation_email(self, order):
+        # Define email subject
+        subject = f'Order #{order.id} Cancellation Notice'
+
+        # Generate HTML message with order details and design
+        html_message = render_to_string('email/order_cancellation_email.html', {'order': order})
+
+        # Strip HTML tags for plain text version
+        plain_message = strip_tags(html_message)
+
+        # Define recipient list
+        recipient_list = [base.ADMIN_EMAIL]
+
+        # Send the email
+        send_mail(
+            subject,
+            plain_message,  # Plain text version
+            base.DEFAULT_FROM_EMAIL,
+            recipient_list,
+            html_message=html_message  # HTML content version
+        )
+        
+    #get list order and view order detail
+    #admin get list order and xử lí đơn hàng

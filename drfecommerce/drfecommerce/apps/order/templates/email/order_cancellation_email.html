@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            width: 80%;
+            margin: 20px auto;
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            text-align: center;
+            background-color: #ff6f61;
+            padding: 10px;
+            color: white;
+            border-top-left-radius: 10px;
+            border-top-right-radius: 10px;
+        }
+
+        .header h1 {
+            margin: 0;
+        }
+
+        .content {
+            margin-top: 20px;
+        }
+
+        .content h2 {
+            color: #ff6f61;
+        }
+
+        .content p {
+            font-size: 16px;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 10px;
+            margin-top: 20px;
+            background-color: #ff6f61;
+            color: white;
+            border-bottom-left-radius: 10px;
+            border-bottom-right-radius: 10px;
+        }
+
+        .footer p {
+            margin: 0;
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Order Cancellation Notice</h1>
+        </div>
+        <div class="content">
+            <h2>Order ID: {{ order.id }}</h2>
+            <p>Dear Admin,</p>
+            <p>We would like to inform you that the order with ID <strong>#{{ order.id }}</strong> has been canceled by
+                the user.</p>
+            <p><strong>Recipient Name:</strong> {{ order.recipient_name }}</p>
+            <p><strong>Recipient Phone:</strong> {{ order.recipient_phone }}</p>
+            <p><strong>Shipping Address:</strong> {{ order.shipping_address }}</p>
+            <p><strong>Payment Method:</strong> {{ order.payment_method }}</p>
+            <p>If you have any questions or need further assistance, please do not hesitate to contact us.</p>
+        </div>
+        <div class="footer">
+            <p>&copy; 2024 VivaFlower. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+
+</html>
