@@ -9,7 +9,7 @@ from .models import ProductIncoming
 from .serializers import ProductIncomingSerializer,ProductIncomingDetailSerializer
 from drfecommerce.apps.product_store.serializers import ProductStoreSerializer
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from drfecommerce.apps.my_admin.authentication import SafeJWTAuthentication
+from drfecommerce.apps.my_admin.authentication import AdminSafeJWTAuthentication
 from django.core.paginator import Paginator
 from django.core.paginator import EmptyPage
 from django.core.paginator import PageNotAnInteger
@@ -17,7 +17,7 @@ from django.utils.dateparse import parse_datetime
 from django.db.models import Sum
 
 class ProductIncomingViewSet(viewsets.ViewSet):
-    authentication_classes = [SafeJWTAuthentication]
+    authentication_classes = [AdminSafeJWTAuthentication]
     permission_classes = [IsAuthenticated]
     
     @action(detail=False, methods=['post'], url_path="create-product-incoming")

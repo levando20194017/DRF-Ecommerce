@@ -10,7 +10,7 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from django.core.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
-from drfecommerce.apps.guest.authentication import SafeJWTAuthentication
+from drfecommerce.apps.guest.authentication import GuestSafeJWTAuthentication
 from rest_framework.permissions import AllowAny
 from rest_framework.decorators import action, permission_classes
 from drfecommerce.apps.guest.utils import generate_access_token, generate_refresh_token
@@ -28,7 +28,7 @@ class GuestViewSetGetData(viewsets.ViewSet):
     queryset = Guest.objects.all()
     serializer_class = GuestSerializerGetData
     
-    authentication_classes = [SafeJWTAuthentication]
+    authentication_classes = [GuestSafeJWTAuthentication]
     permission_classes = [IsAuthenticated] #cái này là áp dụng cho toàn bộ view
     # @permission_classes([IsAuthenticated]) #cái này là áp dụng quyền cho từng view khác nhau
     
@@ -109,7 +109,7 @@ class GuestViewSetGetData(viewsets.ViewSet):
 class GuestViewSetChangeInfor(viewsets.ViewSet):
     serializer_class = GuestSerializerChangeInfor
     
-    authentication_classes = [SafeJWTAuthentication]
+    authentication_classes = [GuestSafeJWTAuthentication]
     permission_classes = [IsAuthenticated] 
     
     @action(detail=False, methods=['put'], url_path="change-information")
@@ -142,7 +142,7 @@ class GuestViewSetChangeInfor(viewsets.ViewSet):
 class ChangeAvatarAPI(viewsets.ViewSet):
     serializer_class = GuestSerializerChangeAvatar
     
-    authentication_classes = [SafeJWTAuthentication]
+    authentication_classes = [GuestSafeJWTAuthentication]
     permission_classes = [IsAuthenticated] 
     
     @action(detail=False, methods=['put'], url_path="change-avatar")

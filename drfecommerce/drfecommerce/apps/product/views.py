@@ -9,7 +9,7 @@ from django.core.paginator import Paginator
 from django.core.paginator import EmptyPage
 from django.core.paginator import PageNotAnInteger
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from drfecommerce.apps.my_admin.authentication import SafeJWTAuthentication
+from drfecommerce.apps.my_admin.authentication import AdminSafeJWTAuthentication
 from rest_framework.decorators import action,permission_classes
 from dotenv import load_dotenv
 from django.utils import timezone
@@ -22,7 +22,7 @@ from drfecommerce.settings import base
 load_dotenv()
 # Create your views here.
 class ProductViewSet(viewsets.ViewSet):
-    authentication_classes = [SafeJWTAuthentication]
+    authentication_classes = [AdminSafeJWTAuthentication]
     permission_classes = [IsAuthenticated]
     @action(detail=False, methods=['get'], url_path="get-list-products")
     def list_products(self, request):

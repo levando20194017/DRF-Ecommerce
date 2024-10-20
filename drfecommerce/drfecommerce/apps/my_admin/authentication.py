@@ -17,7 +17,7 @@ class CSRFCheck(CsrfViewMiddleware):
         return reason
 
 
-class SafeJWTAuthentication(BaseAuthentication):
+class AdminSafeJWTAuthentication(BaseAuthentication):
     '''
         custom authentication class for DRF and JWT
         https://github.com/encode/django-rest-framework/blob/master/rest_framework/authentication.py
@@ -46,7 +46,7 @@ class SafeJWTAuthentication(BaseAuthentication):
             if admin is None:
                 raise exceptions.AuthenticationFailed('Admin not found')
         except:
-            raise exceptions.AuthenticationFailed('An error occurred')
+            raise exceptions.AuthenticationFailed('You do not have permisssions')
         self.enforce_csrf(request)
         return (admin, None)
 

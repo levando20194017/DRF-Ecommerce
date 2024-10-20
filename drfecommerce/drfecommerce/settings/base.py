@@ -162,7 +162,8 @@ SIMPLE_JWT = {
 REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'drfecommerce.apps.guest.authentication.SafeJWTAuthentication',
+        'drfecommerce.apps.guest.authentication.GuestSafeJWTAuthentication',
+        'drfecommerce.apps.my_admin.authentication.AdminSafeJWTAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',

@@ -7,7 +7,7 @@ from drfecommerce.apps.store.models import Store
 from .models import ProductStore
 from .serializers import ProductStoreSerializer, StoreHasProductSerializer, DetailProductStoreSerializer
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from drfecommerce.apps.my_admin.authentication import SafeJWTAuthentication
+from drfecommerce.apps.my_admin.authentication import AdminSafeJWTAuthentication
 from django.core.paginator import Paginator
 from django.core.paginator import EmptyPage
 from django.core.paginator import PageNotAnInteger
@@ -15,7 +15,7 @@ from django.core.paginator import PageNotAnInteger
 class ProductStoreViewSet(viewsets.ModelViewSet):
     queryset = ProductStore.objects.all()
     serializer_class = ProductStoreSerializer
-    authentication_classes = [SafeJWTAuthentication]
+    authentication_classes = [AdminSafeJWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     @action(detail=True, methods=['post'], url_path='soft-delete-product-of-store')

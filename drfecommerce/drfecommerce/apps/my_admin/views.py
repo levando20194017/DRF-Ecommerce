@@ -12,7 +12,7 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from django.core.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
-from drfecommerce.apps.my_admin.authentication import SafeJWTAuthentication
+from drfecommerce.apps.my_admin.authentication import AdminSafeJWTAuthentication
 from rest_framework.permissions import AllowAny
 from rest_framework.decorators import action, permission_classes
 from drfecommerce.apps.my_admin.utils import generate_access_token, generate_refresh_token
@@ -33,7 +33,7 @@ class GuestViewSetGetData(viewsets.ViewSet):
     queryset = Guest.objects.all()
     serializer_class = GuestSerializerGetData
     
-    authentication_classes = [SafeJWTAuthentication]
+    authentication_classes = [AdminSafeJWTAuthentication]
     permission_classes = [IsAuthenticated] #cái này là áp dụng cho toàn bộ view
     # @permission_classes([IsAuthenticated]) #cái này là áp dụng quyền cho từng view khác nhau
     
@@ -81,7 +81,7 @@ class AdminViewSetGetData(viewsets.ViewSet):
     queryset = MyAdmin.objects.all()
     serializer_class = AdminSerializerGetData
     
-    authentication_classes = [SafeJWTAuthentication]
+    authentication_classes = [AdminSafeJWTAuthentication]
     permission_classes = [IsAuthenticated] #cái này là áp dụng cho toàn bộ view
     # @permission_classes([IsAuthenticated]) #cái này là áp dụng quyền cho từng view khác nhau
     
@@ -231,7 +231,7 @@ class AdminViewsetUploadImage(viewsets.ViewSet):
     """
     A simple Viewset for handling upload image actions.
     """
-    authentication_classes = [SafeJWTAuthentication]
+    authentication_classes = [AdminSafeJWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     @action(detail=False, methods=['post'], url_path='upload-image')

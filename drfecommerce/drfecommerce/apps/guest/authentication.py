@@ -15,7 +15,7 @@ class CSRFCheck(CsrfViewMiddleware):
         return reason
 
 
-class SafeJWTAuthentication(BaseAuthentication):
+class GuestSafeJWTAuthentication(BaseAuthentication):
     '''
         custom authentication class for DRF and JWT
         https://github.com/encode/django-rest-framework/blob/master/rest_framework/authentication.py
