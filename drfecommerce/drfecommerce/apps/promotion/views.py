@@ -6,7 +6,7 @@ from django.core.paginator import Paginator
 from django.core.paginator import EmptyPage
 from django.core.paginator import PageNotAnInteger
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from drfecommerce.apps.my_admin.authentication import SafeJWTAuthentication
+from drfecommerce.apps.my_admin.authentication import AdminSafeJWTAuthentication
 from rest_framework.decorators import action, permission_classes
 from dotenv import load_dotenv
 from django.utils import timezone
@@ -15,7 +15,7 @@ from django.utils import timezone
 load_dotenv()
 # Create your views here.
 class PromotionViewSet(viewsets.ViewSet):
-    authentication_classes = [SafeJWTAuthentication]
+    authentication_classes = [AdminSafeJWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     @action(detail=False, methods=['post'], url_path="create-new-promotion")
@@ -249,7 +249,7 @@ class PromotionViewSet(viewsets.ViewSet):
             }
         }, status=status.HTTP_200_OK)
         
-    @action(detail=False, methods=['get'], url_path="search-promtions")
+    @action(detail=False, methods=['get'], url_path="search-promotions")
     def search_promotions(self, request):
         """
         API to search products by name with pagination.
@@ -350,7 +350,7 @@ class PublicPromotionViewSet(viewsets.ViewSet):
                 "message": "Promotion not found."
             }, status=status.HTTP_404_NOT_FOUND)
             
-    @action(detail=False, methods=['get'], url_path="search-promtions")
+    @action(detail=False, methods=['get'], url_path="search-promotions")
     def search_promotions(self, request):
         """
         API to search products by name with pagination.

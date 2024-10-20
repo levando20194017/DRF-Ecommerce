@@ -7,13 +7,13 @@ from drfecommerce.apps.product.models import Product
 from drfecommerce.apps.guest.models import Guest
 from drfecommerce.apps.store.models import Store
 from .serializers import CartSerializer, CartItemSerializer
-from drfecommerce.apps.guest.authentication import SafeJWTAuthentication
+from drfecommerce.apps.guest.authentication import GuestSafeJWTAuthentication
 from django.core.paginator import Paginator
 from django.core.paginator import EmptyPage
 from django.core.paginator import PageNotAnInteger
 
 class CartViewSet(viewsets.ViewSet):
-    authentication_classes = [SafeJWTAuthentication]
+    authentication_classes = [GuestSafeJWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     @action(detail=False, methods=['post'], url_path='create-cart')

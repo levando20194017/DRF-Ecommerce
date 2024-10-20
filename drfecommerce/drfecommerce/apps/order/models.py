@@ -22,7 +22,7 @@ class Order(models.Model):
     payment_method = models.CharField(max_length=50, choices=[('credit_card', 'Credit Card'), ('bank_transfer', 'Bank Transfer'), ('cash_on_delivery', 'Cash on Delivery'), ('e_wallet', 'E-Wallet')], default='credit_card')
     payment_status = models.CharField(max_length=50, choices=[('unpaid', 'Unpaid'), ('paid', 'Paid'), ('failed', 'Failed')], default='unpaid')
     gst_amount = models.FloatField()
-    shipping_cost = models.FloatField()    
+    shipping_cost = models.FloatField()
     shipping_address = models.CharField(max_length=255, default='Unknown Recipient')
     recipient_phone = models.CharField(max_length=20,  default='Unknown phone')
     recipient_name = models.CharField(max_length=100,  default='Unknown name')

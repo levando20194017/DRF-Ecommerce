@@ -8,7 +8,7 @@ from django.core.paginator import PageNotAnInteger
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from drfecommerce.apps.my_admin.authentication import SafeJWTAuthentication
+from drfecommerce.apps.my_admin.authentication import AdminSafeJWTAuthentication
 from rest_framework.decorators import action, permission_classes
 import os
 from dotenv import load_dotenv
@@ -21,7 +21,7 @@ class CatalogViewSetGetData(viewsets.ViewSet):
     queryset = Catalog.objects.all()
     serializer_class = serializerGetCatalog
     
-    authentication_classes = [SafeJWTAuthentication]
+    authentication_classes = [AdminSafeJWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(manual_parameters=[
@@ -169,7 +169,7 @@ class CatalogViewSetGetData(viewsets.ViewSet):
 class CatalogViewSetCreateData(viewsets.ViewSet):
     serializer_class = serializerCreateCatalog
     
-    authentication_classes = [SafeJWTAuthentication]
+    authentication_classes = [AdminSafeJWTAuthentication]
     permission_classes = [IsAuthenticated]
     @action(detail=False, methods=['post'], url_path="create-new-catalog")
     def create_catalog(self, request):    
@@ -236,7 +236,7 @@ class CatalogViewSetCreateData(viewsets.ViewSet):
             }, status=status.HTTP_404_NOT_FOUND)
         
 class CatalogViewSetDeleteData(viewsets.ViewSet):
-    authentication_classes = [SafeJWTAuthentication]
+    authentication_classes = [AdminSafeJWTAuthentication]
     permission_classes = [IsAuthenticated]
     @action(detail=False, methods=['delete'], url_path="delete-catalog")
     def delete_catalog(self, request):
@@ -284,7 +284,7 @@ class CatalogViewSetDeleteData(viewsets.ViewSet):
             self.soft_delete_catalog_and_children(child)
             
 class CatalogViewSetRestoreData(viewsets.ViewSet):
-    authentication_classes = [SafeJWTAuthentication]
+    authentication_classes = [AdminSafeJWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     @action(detail=False, methods=['put'], url_path="restore-catalog")
@@ -334,7 +334,7 @@ class CatalogViewSetRestoreData(viewsets.ViewSet):
             self.restore_catalog_and_children(child)
             
 class CatalogViewSetEditData(viewsets.ViewSet):
-    authentication_classes = [SafeJWTAuthentication]
+    authentication_classes = [AdminSafeJWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     @action(detail=False, methods=['put'], url_path="edit-catalog")
@@ -432,7 +432,7 @@ class PublicCatalogViewSetGetData(viewsets.ViewSet):
     queryset = Catalog.objects.all()
     serializer_class = serializerGetCatalog
     
-    authentication_classes = [SafeJWTAuthentication]
+    authentication_classes = [AdminSafeJWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(manual_parameters=[

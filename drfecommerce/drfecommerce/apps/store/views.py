@@ -6,7 +6,7 @@ from django.core.paginator import Paginator
 from django.core.paginator import EmptyPage
 from django.core.paginator import PageNotAnInteger
 from rest_framework.permissions import IsAuthenticated
-from drfecommerce.apps.my_admin.authentication import SafeJWTAuthentication
+from drfecommerce.apps.my_admin.authentication import AdminSafeJWTAuthentication
 from rest_framework.decorators import action
 from dotenv import load_dotenv
 from django.utils import timezone
@@ -19,7 +19,7 @@ class StoreViewSet(viewsets.ViewSet):
     """
     ViewSet cho các thao tác với Store.
     """
-    authentication_classes = [SafeJWTAuthentication]
+    authentication_classes = [AdminSafeJWTAuthentication]
     permission_classes = [IsAuthenticated]
     
     @action(detail=False, methods=['post'], url_path="create-store")
