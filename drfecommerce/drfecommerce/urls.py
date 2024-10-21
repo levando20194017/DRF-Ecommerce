@@ -10,6 +10,7 @@ from drfecommerce.apps.product import views as views_product
 from drfecommerce.apps.cart import views as views_cart
 from drfecommerce.apps.store import views as views_store
 from drfecommerce.apps.order import views as views_order
+from drfecommerce.apps.order_detail import views as views_order_detail
 from drfecommerce.apps.product_incoming import views as views_product_incoming
 from drfecommerce.apps.product_store import views as views_product_store
 from drfecommerce.settings import base
@@ -115,6 +116,7 @@ urlpatterns = [
     path("api/order/create-new-order/", views_order.OrderViewSet.as_view({'post': 'create_new_order'}), name='create-new-order'),
     path("api/order/cancel-order/", views_order.OrderViewSet.as_view({'put': 'cancel_order'}), name='cancel-order'),
     path("api/order/get-list-orders/", views_order.OrderViewSet.as_view({'get': 'list_orders'}), name='get-list-orders'),
+    path("api/order/get-order-detail/", views_order_detail.OrderDetailViewSet.as_view({'get': 'get_order_detail'}), name='get-order-detail'),
     
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/schema/docs", SpectacularSwaggerView.as_view(url_name="schema")),

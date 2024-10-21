@@ -1,22 +1,18 @@
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from django.core.mail import send_mail
-from django.utils import timezone
 from .models import Order
 from .serializers import OrderSerializer
-from drfecommerce.apps.order_detail.serializers import OrderDetailSerializer
-from drfecommerce.apps.payment.serializers import PaymentSerializer
 from drfecommerce.apps.order_detail.models import OrderDetail
 from drfecommerce.apps.product.models import Product
 from drfecommerce.apps.cart.models import Cart, CartItem
 from drfecommerce.apps.product_store.models import ProductStore
 from drfecommerce.apps.store.models import Store
 from drfecommerce.apps.guest.models import Guest
-from drfecommerce.apps.payment.models import Payment
 from drfecommerce.settings import base
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import IsAuthenticated
 from drfecommerce.apps.guest.authentication import GuestSafeJWTAuthentication
-from rest_framework.decorators import action,permission_classes
+from rest_framework.decorators import action
 from django.shortcuts import get_object_or_404
 import json
 from django.template.loader import render_to_string
@@ -24,7 +20,6 @@ from django.utils.html import strip_tags
 from django.core.paginator import Paginator
 from django.core.paginator import EmptyPage
 from django.core.paginator import PageNotAnInteger
-from django.utils import timezone
 from datetime import datetime
 
 class OrderViewSet(viewsets.ViewSet):
@@ -426,8 +421,4 @@ class OrderViewSet(viewsets.ViewSet):
                 "orders": serializer.data
             }
         }, status=status.HTTP_200_OK)
-    #api view order detail
-    
-    
-    
     #admin get list order and xử lí đơn hàng
