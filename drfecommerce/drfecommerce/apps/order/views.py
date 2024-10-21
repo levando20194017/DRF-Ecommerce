@@ -12,6 +12,7 @@ from drfecommerce.apps.guest.models import Guest
 from drfecommerce.settings import base
 from rest_framework.permissions import IsAuthenticated
 from drfecommerce.apps.guest.authentication import GuestSafeJWTAuthentication
+from drfecommerce.apps.my_admin.authentication import AdminSafeJWTAuthentication
 from rest_framework.decorators import action
 from django.shortcuts import get_object_or_404
 import json
@@ -422,3 +423,89 @@ class OrderViewSet(viewsets.ViewSet):
             }
         }, status=status.HTTP_200_OK)
     #admin get list order and xử lí đơn hàng
+    
+class AdminOrderViewSet(viewsets.ViewSet):
+    #api xử lí tạo đơn hàng khi mà người dùng chọn phương thức là thanh toán khi nhận hàng
+    authentication_classes = [AdminSafeJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    #get list order
+    @action(detail=False, methods=['get'], url_path="get-list-orders")
+    def list_orders(self, request):
+        """
+        Get list of orders with pagination and optional date range filtering.
+
+        Parameters:
+        - page_index: The index of the page (default is 1).
+        - page_size: The number of items per page (default is 10).
+        - start_date: The start date to filter orders (format: YYYY-MM-DD).
+        - end_date: The end date to filter orders (format: YYYY-MM-DD).
+        - order_status: The status of the order to filter.
+        - payment_method: The payment method to filter.
+        - payment_status: The payment status to filter.
+        """
+        page_index = int(request.GET.get('page_index', 1))
+        page_size = int(request.GET.get('page_size', 10))
+        start_date = request.GET.get('start_date')  # Get the start date parameter
+        end_date = request.GET.get('end_date')      # Get the end date parameter
+        order_status = request.GET.get('order_status')  # Get order status filter
+        payment_method = request.GET.get('payment_method')  # Get payment method filter
+        payment_status = request.GET.get('payment_status')  # Get payment status filter
+        # Start building the query
+        orders = Order.objects.all()
+
+        # If start_date or end_date is provided, filter orders by date range
+        if start_date or end_date:
+            if start_date:
+                try:
+                    # Parse the start date string to a date object
+                    start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
+                    orders = orders.filter(order_date__date__gte=start_date)  # Greater than or equal to start_date
+                except ValueError:
+                    return Response({
+                        "status": status.HTTP_400_BAD_REQUEST,
+                        "message": "Invalid start date format. Please use YYYY-MM-DD."
+                    }, status=status.HTTP_400_BAD_REQUEST)
+
+            if end_date:
+                try:
+                    # Parse the end date string to a date object
+                    end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
+                    orders = orders.filter(order_date__date__lte=end_date)  # Less than or equal to end_date
+                except ValueError:
+                    return Response({
+                        "status": status.HTTP_400_BAD_REQUEST,
+                        "message": "Invalid end date format. Please use YYYY-MM-DD."
+                    }, status=status.HTTP_400_BAD_REQUEST)        
+         # Apply filters for order status, payment method, and payment status
+        if order_status:
+            orders = orders.filter(order_status=order_status)
+        
+        if payment_method:
+            orders = orders.filter(payment_method=payment_method)
+
+        if payment_status:
+            orders = orders.filter(payment_status=payment_status)
+            
+        paginator = Paginator(orders, page_size)
+
+        try:
+            paginated_orders = paginator.page(page_index)
+        except PageNotAnInteger:
+            paginated_orders = paginator.page(1)
+        except EmptyPage:
+            paginated_orders = paginator.page(paginator.num_pages)
+
+        serializer = OrderSerializer(paginated_orders, many=True)
+
+        return Response({
+            "status": status.HTTP_200_OK,
+            "message": "OK",
+            "data": {
+                "total_pages": paginator.num_pages,
+                "total_items": paginator.count,
+                "page_index": page_index,
+                "page_size": page_size,
+                "orders": serializer.data
+            }
+        }, status=status.HTTP_200_OK)
+    

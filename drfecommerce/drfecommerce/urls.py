@@ -113,10 +113,12 @@ urlpatterns = [
     path("api/product_store/detail-of-product-and-store/", views_product_store.PublicProductStoreViewSet.as_view({'get': 'detail_product_store'}), name='detail-product-and-store'),
     
     #order
+    #--private route
     path("api/order/create-new-order/", views_order.OrderViewSet.as_view({'post': 'create_new_order'}), name='create-new-order'),
     path("api/order/cancel-order/", views_order.OrderViewSet.as_view({'put': 'cancel_order'}), name='cancel-order'),
     path("api/order/get-list-orders/", views_order.OrderViewSet.as_view({'get': 'list_orders'}), name='get-list-orders'),
     path("api/order/get-order-detail/", views_order_detail.OrderDetailViewSet.as_view({'get': 'get_order_detail'}), name='get-order-detail'),
+    path("api/order/admin/get-list-orders/", views_order.AdminOrderViewSet.as_view({'get': 'list_orders'}), name='admin-get-list-orders'),
     
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/schema/docs", SpectacularSwaggerView.as_view(url_name="schema")),
