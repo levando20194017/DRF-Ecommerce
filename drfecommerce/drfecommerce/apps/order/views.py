@@ -509,3 +509,5 @@ class AdminOrderViewSet(viewsets.ViewSet):
             }
         }, status=status.HTTP_200_OK)
     
+    #detail order
+    
