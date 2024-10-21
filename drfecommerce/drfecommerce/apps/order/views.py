@@ -7,6 +7,7 @@ from drfecommerce.apps.order_detail.models import OrderDetail
 from drfecommerce.apps.product.models import Product
 from drfecommerce.apps.cart.models import Cart, CartItem
 from drfecommerce.apps.product_store.models import ProductStore
+from drfecommerce.apps.product_sale.models import ProductSale
 from drfecommerce.apps.store.models import Store
 from drfecommerce.apps.guest.models import Guest
 from drfecommerce.settings import base
@@ -509,5 +510,130 @@ class AdminOrderViewSet(viewsets.ViewSet):
             }
         }, status=status.HTTP_200_OK)
     
-    #detail order
-    
+    #admin update order
+    @action(detail=False, methods=['put'], url_path="update-order-status")
+    def update_order_status(self, request):
+        """
+        request body data:
+        - order_id: ID of the order
+        - order_status: new status of the order (confirm, shipped, delivered, cancelled, returned)
+        """
+        data = request.data
+        order_id = data.get('order_id')
+        new_status = data.get('order_status')
+        # Nếu confirm thì trừ số lượng quantity trong product_store
+        # Returned thì cộng lại quantity vào trong product_store
+        # Delivered thì cập nhật lại vào phần product_sale
+        # Mỗi lần cập nhật trạng thái sẽ báo mail về cho người dùng.
+        
+        # Validate order status
+        if new_status not in ['confirmed', 'shipped', 'delivered', 'cancelled', 'returned']:
+            return Response({
+                "status":status.HTTP_400_BAD_REQUEST,
+                "message": "Invalid order status."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Fetch the order
+        try:
+            order = Order.objects.get(id=order_id)
+        except Order.DoesNotExist:
+            return Response({"message": "Order not found.", "status":status.HTTP_404_NOT_FOUND}, status=status.HTTP_404_NOT_FOUND)
+
+        # Handle status-specific actions
+        if new_status == 'confirmed':
+            # Reduce quantity from ProductStore for each order detail
+            for detail in order.orderdetail_set.all():
+                product_store = ProductStore.objects.get(product=detail.product, store=detail.store)
+                if product_store.remaining_stock < detail.quantity:
+                    return Response({
+                        "status": status.HTTP_400_BAD_REQUEST,
+                        "message": f"Not enough stock for product {detail.product.name}."
+                        }, status=status.HTTP_400_BAD_REQUEST)
+                product_store.remaining_stock -= detail.quantity
+                product_store.save()
+
+        elif new_status == 'returned':
+            # Add quantity back to ProductStore
+            for detail in order.orderdetail_set.all():
+                product_store = ProductStore.objects.get(product=detail.product, store=detail.store)
+                product_store.remaining_stock += detail.quantity
+                product_store.save()
+
+        elif new_status == 'delivered':
+            # Update ProductSale with sale details
+            for detail in order.orderdetail_set.all():
+                ProductSale.objects.create(
+                    product=detail.product,
+                    store=detail.store,
+                    order_detail=detail,
+                    sale_price=detail.unit_price,
+                    quantity_sold=detail.quantity,
+                    vat=order.gst_amount,
+                    shipping_cost=order.shipping_cost
+                )
+
+        # Update the order status
+        order.order_status = new_status
+        order.save()
+
+        # Send notification email
+        self.send_order_status_update_email(order, new_status)
+
+        return Response({
+            "status":status.HTTP_200_OK,
+            "message": f"Order status updated to {new_status}."}, status=status.HTTP_200_OK)
+
+    def send_order_status_update_email(self, order, new_status):
+        subject = f"Order #{order.id} Status Update: {new_status.capitalize()}"
+        html_message = render_to_string('email/order_status_update_email.html', {
+            'order': order,
+            'new_status': new_status.capitalize(),
+        })
+        plain_message = strip_tags(html_message)
+        recipient_list = [order.guest.email]
+
+        send_mail(
+            subject,
+            plain_message,
+            base.DEFAULT_FROM_EMAIL,
+            recipient_list,
+            html_message=html_message,
+        )
+
+    #admin update order
+    @action(detail=False, methods=['put'], url_path="update-payment-status")
+    def update_payment_status(self, request):
+        """
+        request body data:
+        - order_id: ID of the order
+        - payment_status: new status of the order (paid, unpaid)
+        """
+        #cập nhật trạng thái thanh toán đối với 
+        data = request.data
+        order_id = data.get('order_id')
+        new_status = data.get('payment_status')
+        # Nếu confirm thì trừ số lượng quantity trong product_store
+        # Returned thì cộng lại quantity vào trong product_store
+        # Delivered thì cập nhật lại vào phần product_sale
+        # Mỗi lần cập nhật trạng thái sẽ báo mail về cho người dùng.
+        
+        # Validate order status
+        if new_status not in ['paid', 'unpaid']:
+            return Response({
+                "status":status.HTTP_400_BAD_REQUEST,
+                "message": "Invalid order status."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Fetch the order
+        try:
+            order = Order.objects.get(id=order_id)
+        except Order.DoesNotExist:
+            return Response({"message": "Order not found.", "status":status.HTTP_404_NOT_FOUND}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Update the order status
+        order.payment_status = new_status
+        order.save()
+        
+        return Response({
+            "status":status.HTTP_200_OK,
+            "message": f"Payment status updated to {new_status}."}, status=status.HTTP_200_OK)
+        
+        
