@@ -7,12 +7,13 @@ from drfecommerce.apps.guest.models import Guest
 from drfecommerce.apps.order.models import Order
 from rest_framework.permissions import IsAuthenticated
 from drfecommerce.apps.guest.authentication import GuestSafeJWTAuthentication
+from drfecommerce.apps.my_admin.authentication import AdminSafeJWTAuthentication
 from rest_framework.decorators import action
 
 class OrderDetailViewSet(viewsets.ModelViewSet):
     queryset = OrderDetail.objects.all()
     serializer_class = OrderDetailSerializer
-    authentication_classes = [GuestSafeJWTAuthentication]
+    authentication_classes = [GuestSafeJWTAuthentication, AdminSafeJWTAuthentication]
     permission_classes = [IsAuthenticated]
     #api view order detail
     @action(detail=False, methods=['get'], url_path="get-order-detail")
@@ -50,6 +51,3 @@ class OrderDetailViewSet(viewsets.ModelViewSet):
                 "message": "Order detail not found."
             }, status=status.HTTP_404_NOT_FOUND)
             
-            
-
-    

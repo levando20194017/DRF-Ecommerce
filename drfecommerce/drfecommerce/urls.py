@@ -119,6 +119,8 @@ urlpatterns = [
     path("api/order/get-list-orders/", views_order.OrderViewSet.as_view({'get': 'list_orders'}), name='get-list-orders'),
     path("api/order/get-order-detail/", views_order_detail.OrderDetailViewSet.as_view({'get': 'get_order_detail'}), name='get-order-detail'),
     path("api/order/admin/get-list-orders/", views_order.AdminOrderViewSet.as_view({'get': 'list_orders'}), name='admin-get-list-orders'),
+    path("api/order/admin/update-order-status/", views_order.AdminOrderViewSet.as_view({'put': 'update_order_status'}), name='admin-update-order-status'),
+    path("api/order/admin/update-payment-status/", views_order.AdminOrderViewSet.as_view({'put': 'update_payment_status'}), name='admin-update-payment-status'),
     
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/schema/docs", SpectacularSwaggerView.as_view(url_name="schema")),
