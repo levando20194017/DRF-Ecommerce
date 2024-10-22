@@ -20,4 +20,4 @@ class Notification(models.Model):
     attachment_url = models.TextField(null=True, blank=True)  # Link đến file đính kèm (nếu có) ví dụ như hình ảnh
     
     def __str__(self):
-        return f'Notification for {self.recipient} - {self.notification_type}'
+        return f'Notification for {self.guest} - {self.notification_type}'
