@@ -10,6 +10,7 @@ from drfecommerce.apps.product import views as views_product
 from drfecommerce.apps.cart import views as views_cart
 from drfecommerce.apps.store import views as views_store
 from drfecommerce.apps.order import views as views_order
+from drfecommerce.apps.review import views as views_review
 from drfecommerce.apps.order_detail import views as views_order_detail
 from drfecommerce.apps.product_incoming import views as views_product_incoming
 from drfecommerce.apps.product_store import views as views_product_store
@@ -121,6 +122,14 @@ urlpatterns = [
     path("api/order/admin/get-list-orders/", views_order.AdminOrderViewSet.as_view({'get': 'list_orders'}), name='admin-get-list-orders'),
     path("api/order/admin/update-order-status/", views_order.AdminOrderViewSet.as_view({'put': 'update_order_status'}), name='admin-update-order-status'),
     path("api/order/admin/update-payment-status/", views_order.AdminOrderViewSet.as_view({'put': 'update_payment_status'}), name='admin-update-payment-status'),
+    
+    #rating
+    path("api/review/guest-review/", views_review.ReviewViewSet.as_view({'post': 'guest_review'}), name='guest-review'),
+    path("api/review/admin-reply-review/", views_review.ReviewViewSet.as_view({'post': 'admin_reply_review'}), name='admin-reply-review'),
+    path("api/review/update-review/", views_review.ReviewViewSet.as_view({'put': 'update_review'}), name='update-review'),
+    path("api/review/delete-review/", views_review.ReviewViewSet.as_view({'delete': 'delete_review'}), name='delete-review'),
+    #---public route
+    path("api/review/get-list-reviews/", views_review.PublicReviewViewset.as_view({'get': 'get_list_reviews'}), name='get-list-reviews'),
     
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/schema/docs", SpectacularSwaggerView.as_view(url_name="schema")),
