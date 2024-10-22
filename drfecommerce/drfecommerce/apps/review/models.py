@@ -2,6 +2,7 @@ from django.db import models
 from drfecommerce.apps.guest.models import Guest
 from drfecommerce.apps.product.models import Product
 from drfecommerce.apps.order_detail.models import OrderDetail
+from drfecommerce.apps.my_admin.models import MyAdmin
 from drfecommerce.apps.store.models import Store
 from django.utils import timezone
 
@@ -19,3 +20,14 @@ class Review(models.Model):
 
     def __str__(self):
         return f'Review {self.id} by {self.guest} for {self.product}'
+
+class ReviewReply(models.Model):
+    id = models.AutoField(primary_key=True)
+    review = models.ForeignKey(Review, on_delete=models.CASCADE)  # Liên kết với review
+    admin = models.ForeignKey(MyAdmin, on_delete=models.CASCADE)  # Admin phản hồi
+    reply = models.TextField()  # Nội dung phản hồi
+    created_at = models.DateTimeField(default=timezone.now)  # Ngày phản hồi
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f'Reply by {self.admin} on Review {self.review.id}'
