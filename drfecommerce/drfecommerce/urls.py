@@ -15,6 +15,7 @@ from drfecommerce.apps.order_detail import views as views_order_detail
 from drfecommerce.apps.product_incoming import views as views_product_incoming
 from drfecommerce.apps.product_sale import views as views_product_sale
 from drfecommerce.apps.product_store import views as views_product_store
+from drfecommerce.apps.notification import views as views_notification
 from drfecommerce.settings import base
 from django.conf.urls.static import static
 
@@ -138,6 +139,10 @@ urlpatterns = [
     path("api/review/delete-review/", views_review.ReviewViewSet.as_view({'delete': 'delete_review'}), name='delete-review'),
     #---public route
     path("api/review/get-list-reviews/", views_review.PublicReviewViewset.as_view({'get': 'get_list_reviews'}), name='get-list-reviews'),
+    
+    #notifications
+    path("api/notification/get-list-notifications/", views_notification.NotificationViewSet.as_view({'get': 'list_notifications'}), name='get-list-notifications'),
+    path("api/notification/read-notification/", views_notification.NotificationViewSet.as_view({'put': 'read_notification'}), name='read-notification'),
     
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/schema/docs", SpectacularSwaggerView.as_view(url_name="schema")),
