@@ -13,6 +13,7 @@ from drfecommerce.apps.order import views as views_order
 from drfecommerce.apps.review import views as views_review
 from drfecommerce.apps.order_detail import views as views_order_detail
 from drfecommerce.apps.product_incoming import views as views_product_incoming
+from drfecommerce.apps.product_sale import views as views_product_sale
 from drfecommerce.apps.product_store import views as views_product_store
 from drfecommerce.settings import base
 from django.conf.urls.static import static
@@ -92,7 +93,14 @@ urlpatterns = [
     path("api/product_incoming/admin/detail-product-incoming/", views_product_incoming.ProductIncomingViewSet.as_view({'get': 'detail_product_incoming'}), name='admin-get-detail-product-incomings'),
     path("api/product_incoming/admin/search_product_incomings/", views_product_incoming.ProductIncomingViewSet.as_view({'get': 'search_product_incomings'}), name='admin-search-product-incomings'),
     path("api/product_incoming/admin/expenditure-statistics/", views_product_incoming.ProductIncomingViewSet.as_view({'get': 'expenditure_statistics'}), name='admin-get-expenditure-statistics'),
-
+    
+    #product_sale (Liên quan đến sản phẩm đã bán, thống kê nó)
+    #thống kê của cửa hàng theo ngày. các số lượng đã bán
+    path("api/product_sale/admin/get-all-products-sale/", views_product_sale.AdminProductSaleViewSet.as_view({'get': 'get_all_products_sale'}), name='admin-get-all-products-sale'),
+    path("api/product_sale/admin/get-total-report/", views_product_sale.AdminProductSaleViewSet.as_view({'get': 'get_total_report'}), name='get-total-report'),
+    #thống kê sản phẩm đã bán (số lượng đã bán trên mỗi sản phẩm)
+    path("api/product_sale/admin/get-list-sold-products-filter/", views_product_sale.AdminProductSaleViewSet.as_view({'get': 'list_sold_products_filter'}), name='admin-get-list-sold-product-filter'),
+    
     #store
     #--private route
     path("api/store/admin/get-list-stores/", views_store.StoreViewSet.as_view({'get': 'list_stores'}), name='admin-get-list-stores'),
