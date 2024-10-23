@@ -133,7 +133,7 @@ urlpatterns = [
     
     #rating
     path("api/review/guest-review/", views_review.ReviewViewSet.as_view({'post': 'guest_review'}), name='guest-review'),
-    path("api/review/admin-reply-review/", views_review.ReviewViewSet.as_view({'post': 'admin_reply_review'}), name='admin-reply-review'),
+    path("api/review/admin-reply-review/", views_review.AdminReviewViewset.as_view({'post': 'admin_reply_review'}), name='admin-reply-review'),
     path("api/review/update-review/", views_review.ReviewViewSet.as_view({'put': 'update_review'}), name='update-review'),
     path("api/review/delete-review/", views_review.ReviewViewSet.as_view({'delete': 'delete_review'}), name='delete-review'),
     #---public route
