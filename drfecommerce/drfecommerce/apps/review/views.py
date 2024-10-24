@@ -4,6 +4,7 @@ from .models import Review, ReviewReply
 from .serializers import ReviewSerializer, ReviewReplySerializer, GetAllReviewSerializer
 from drfecommerce.apps.order_detail.models import OrderDetail
 from drfecommerce.apps.guest.models import Guest
+from drfecommerce.apps.notification.views import create_notification
 from drfecommerce.settings import base
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from drfecommerce.apps.guest.authentication import GuestSafeJWTAuthentication
@@ -177,6 +178,7 @@ class ReviewViewSet(viewsets.ViewSet):
 class AdminReviewViewset(viewsets.ViewSet):
     authentication_classes = [AdminSafeJWTAuthentication]
     permission_classes = [IsAuthenticated]
+
     @action(detail=False, methods=['post'], url_path="admin-reply-review")
     def admin_reply_review(self, request):
         # Lấy thông tin từ request
@@ -197,23 +199,34 @@ class AdminReviewViewset(viewsets.ViewSet):
 
         try:
             review = Review.objects.get(id=review_id)
-        except Guest.DoesNotExist:
+        except Review.DoesNotExist:
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Review not found."
             }, status=status.HTTP_404_NOT_FOUND)
-            
+
+        # Create the reply
         reply_review = ReviewReply.objects.create(
             review=review,
             admin_id=admin_id,
             reply=reply
         )
-        # Serialize và trả về phản hồi
+        
+        # Create a notification for the guest (review author)
+        create_notification(
+            guest=review.guest,  # Assuming `review.guest` gets the guest/author
+            notification_type="review_reply",  # Define your notification type
+            message=f"Admin replied to your review: {reply}",  # Customize the message
+            related_object_id=review.id,  # Link it to the review ID
+            url=f"/reviews/{review.id}"  # Optionally add a URL to the review
+        )
+        
+        # Serialize and return the response
         serializer = ReviewReplySerializer(reply_review)
         return Response({
             "data": serializer.data,
             "status": status.HTTP_201_CREATED
-            }, status=status.HTTP_201_CREATED)
+        }, status=status.HTTP_201_CREATED)
 
 @permission_classes([AllowAny])
 class PublicReviewViewset(viewsets.ViewSet):
