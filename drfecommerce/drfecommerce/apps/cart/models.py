@@ -9,6 +9,9 @@ class Cart(models.Model):
     guest = models.ForeignKey(Guest, on_delete=models.CASCADE)  # Một người dùng có thể có nhiều giỏ hàng (nếu cần)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'carts'
 
     def __str__(self):
         return f'Cart {self.id} - Guest: {self.guest}'
@@ -20,6 +23,9 @@ class CartItem(models.Model):
     quantity = models.IntegerField(default=1)  # Số lượng sản phẩm trong giỏ hàng
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
-
+    
+    class Meta:
+        db_table = 'cart_item'
+        
     def __str__(self):
         return f'CartItem {self.id} - Product: {self.product.name} - Quantity: {self.quantity}'

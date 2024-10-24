@@ -17,6 +17,9 @@ class Review(models.Model):
     gallery = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now)  # Review submission date
     updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'reviews'
 
     def __str__(self):
         return f'Review {self.id} by {self.guest} for {self.product}'
@@ -28,6 +31,9 @@ class ReviewReply(models.Model):
     reply = models.TextField()  # Nội dung phản hồi
     created_at = models.DateTimeField(default=timezone.now)  # Ngày phản hồi
     updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'review_reply'
 
     def __str__(self):
         return f'Reply by {self.admin} on Review {self.review.id}'

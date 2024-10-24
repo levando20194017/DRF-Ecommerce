@@ -17,6 +17,9 @@ class Guest(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     delete_at = models.DateTimeField(null=True, blank=True, default=None)
+    
+    class Meta:
+        db_table = 'guests'
      
     @property
     def is_authenticated(self):

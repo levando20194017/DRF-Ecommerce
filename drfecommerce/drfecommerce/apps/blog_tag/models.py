@@ -8,3 +8,6 @@ class BlogTag(models.Model):
     tag = models.ForeignKey(Tag, on_delete=models.CASCADE, null=True, blank=True)
     blog = models.ForeignKey(Blog, on_delete=models.CASCADE, null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
+    
+    class Meta:
+        db_table = 'blog_tag'
