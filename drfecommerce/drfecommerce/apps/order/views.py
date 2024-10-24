@@ -23,7 +23,7 @@ from django.core.paginator import Paginator
 from django.core.paginator import EmptyPage
 from django.core.paginator import PageNotAnInteger
 from datetime import datetime
-
+from drfecommerce.apps.notification.views import create_notification
 class OrderViewSet(viewsets.ViewSet):
     #api xử lí tạo đơn hàng khi mà người dùng chọn phương thức là thanh toán khi nhận hàng
     authentication_classes = [GuestSafeJWTAuthentication]
@@ -130,7 +130,20 @@ class OrderViewSet(viewsets.ViewSet):
                     if cart_item:
                         # Nếu có, loại bỏ nó ra khỏi giỏ hàng
                         cart_item.delete()
+            # Step 4: Gửi thông báo đến guest
+            try:
+                guest = Guest.objects.get(id=guest_id)  # Lấy đối tượng guest
+            except Guest.DoesNotExist:
+                return Response({'Guest': 'Order not found.', "status":status.HTTP_404_NOT_FOUND}, status=status.HTTP_404_NOT_FOUND)
             
+            create_notification(
+                guest=guest,  # Gửi đối tượng guest
+                notification_type="order_update",  # Loại thông báo
+                message=f"Your order #{order.id} has been placed successfully.",  # Nội dung thông báo
+                related_object_id=order.id,  # Liên kết với mã đơn hàng
+                url=f"/orders/{order.id}"  # URL dẫn đến đơn hàng
+            )
+        
             # Handle payment processing
             payment_method = data['payment_methods']
             if payment_method == "e_wallet":
@@ -208,11 +221,11 @@ class OrderViewSet(viewsets.ViewSet):
                 # Gửi email xác nhận
                 self.send_order_email_to_admin(order)
 
-                return Response({'message': 'Payment successful and order confirmed.'}, status=status.HTTP_200_OK)
+                return Response({'message': 'Payment successful and order confirmed.', "status":status.HTTP_200_OK}, status=status.HTTP_200_OK)
             else:
-                return Response({'error': 'Payment amount mismatch or payment failed.'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'error': 'Payment amount mismatch or payment failed.', "status":status.HTTP_400_BAD_REQUEST}, status=status.HTTP_400_BAD_REQUEST)
         except Order.DoesNotExist:
-            return Response({'error': 'Order not found.'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'error': 'Order not found.', "status":status.HTTP_404_NOT_FOUND}, status=status.HTTP_404_NOT_FOUND)
 
     def send_order_email_to_admin(self, order, *args, **kwargs):
         # Gửi email với thông tin order cho admin
@@ -301,7 +314,16 @@ class OrderViewSet(viewsets.ViewSet):
                 # Update the order status to 'cancel'
                 order.order_status = 'cancelled'
                 order.save()
-
+                
+                guest = order.guest  # Assuming the guest is related to the order
+                create_notification(
+                    guest=guest,  # Gửi đối tượng guest
+                    notification_type="order_update",  # Loại thông báo
+                    message=f"Your order #{order.id} has been canceled.",  # Nội dung thông báo
+                    related_object_id=order.id,  # Liên kết với mã đơn hàng
+                    url=f"/orders/{order.id}"  # URL dẫn đến đơn hàng đã hủy
+                )
+            
                 # Send email notification to the admin
                 self.send_order_cancellation_email(order)
 
@@ -573,8 +595,36 @@ class AdminOrderViewSet(viewsets.ViewSet):
 
         # Update the order status
         order.order_status = new_status
+        if order.order_status == "confirmed":
+            guest = order.guest  # Assuming the guest is related to the order
+            create_notification(
+                guest=guest,  # Gửi đối tượng guest
+                notification_type="order_update",  # Loại thông báo
+                message=f"Your order #{order.id} has been confirmed by VivaFlower.",  # Nội dung thông báo
+                related_object_id=order.id,  # Liên kết với mã đơn hàng
+                url=f"/orders/{order.id}"  # URL dẫn đến đơn hàng đã hủy
+            )
+        if order.order_status == "delivered":
+            guest = order.guest  # Assuming the guest is related to the order
+            create_notification(
+                guest=guest,  # Gửi đối tượng guest
+                notification_type="order_update",  # Loại thông báo
+                message=f"Your order #{order.id} has been delivered. You can rate the product quality.",  # Nội dung thông báo
+                related_object_id=order.id,  # Liên kết với mã đơn hàng
+                url=f"/orders/{order.id}"  # URL dẫn đến đơn hàng đã hủy
+            )
+            
+        if order.order_status == "shipped":
+            guest = order.guest  # Assuming the guest is related to the order
+            create_notification(
+                guest=guest,  # Gửi đối tượng guest
+                notification_type="order_update",  # Loại thông báo
+                message=f"Your order #{order.id} has been delivered to the carrier.",  # Nội dung thông báo
+                related_object_id=order.id,  # Liên kết với mã đơn hàng
+                url=f"/orders/{order.id}"  # URL dẫn đến đơn hàng đã hủy
+            )
+            
         order.save()
-
         # Send notification email
         self.send_order_status_update_email(order, new_status)
 
