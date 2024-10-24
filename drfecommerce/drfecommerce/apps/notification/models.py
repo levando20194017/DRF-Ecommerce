@@ -19,5 +19,8 @@ class Notification(models.Model):
     url = models.TextField(null=True, blank=True)  # URL dẫn đến chi tiết liên quan của thông báo
     attachment_url = models.TextField(null=True, blank=True)  # Link đến file đính kèm (nếu có) ví dụ như hình ảnh
     
+    class Meta:
+        db_table = 'notifications'
+        
     def __str__(self):
         return f'Notification for {self.guest} - {self.notification_type}'

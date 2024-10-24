@@ -12,3 +12,6 @@ class Transaction(models.Model):
     bank_status = models.CharField(max_length=50)
     bank_message = models.CharField(max_length=255)
     created_at = models.DateTimeField(default=timezone.now)
+    
+    class Meta:
+        db_table = 'transactions'
