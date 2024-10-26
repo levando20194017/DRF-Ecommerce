@@ -148,13 +148,13 @@ class CategoryViewSet(viewsets.ViewSet):
             "message": "Category restored successfully."
         }, status=status.HTTP_200_OK)
         
-    @action(detail=False, methods=['get'], url_path="get-dettail-category")
+    @action(detail=False, methods=['get'], url_path="get-detail-category")
     def get_category(self, request):
         """
         Get category details: body data:
         - category_id
         """
-        category_id = request.query_params.get('id')
+        category_id = request.query_params.get('category_id')
         if not category_id:
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,

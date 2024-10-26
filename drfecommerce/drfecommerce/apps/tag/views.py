@@ -7,6 +7,7 @@ from django.core.paginator import EmptyPage
 from django.core.paginator import PageNotAnInteger
 from rest_framework.permissions import IsAuthenticated
 from drfecommerce.apps.my_admin.authentication import AdminSafeJWTAuthentication
+from drfecommerce.apps.blog_tag.models import BlogTag
 from rest_framework.decorators import action
 from dotenv import load_dotenv
 from django.utils import timezone
@@ -89,12 +90,19 @@ class TagViewSet(viewsets.ViewSet):
             }, status=status.HTTP_400_BAD_REQUEST)
 
         try:
+            # Get the tag associated with the provided tag_id
             tag = Tag.objects.get(id=tag_id)
-            tag.delete_at = timezone.now()  # Soft delete by setting delete_at
+            
+            # Soft delete by setting delete_at for BlogTag entries
+            BlogTag.objects.filter(tag_id=tag_id).update(delete_at=timezone.now()) 
+            
+            # Soft delete the tag itself
+            tag.delete_at = timezone.now()  
             tag.save()
+            
             return Response({
                 "status": status.HTTP_200_OK,
-                "message": "Tag soft deleted successfully!"
+                "message": "Tag and its associations soft deleted successfully!"
             }, status=status.HTTP_200_OK)
         except Tag.DoesNotExist:
             return Response({
@@ -138,7 +146,7 @@ class TagViewSet(viewsets.ViewSet):
             "message": "Tag restored successfully."
         }, status=status.HTTP_200_OK)
         
-    @action(detail=False, methods=['get'], url_path="get-dettail-tag")
+    @action(detail=False, methods=['get'], url_path="get-detail-tag")
     def get_tag(self, request):
         """
         Get tag details: body data:
