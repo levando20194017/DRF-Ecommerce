@@ -361,9 +361,11 @@ class PublicPromotionViewSet(viewsets.ViewSet):
         page_index = int(request.GET.get('page_index', 1))
         page_size = int(request.GET.get('page_size', 10))
         name_query = request.GET.get('name', '').strip()
-
-        # Lọc sản phẩm theo tên
-        promotions = Promotion.objects.filter(name__icontains=name_query, delete_at__isnull = True)
+        
+        promotions = Promotion.objects.all()
+        if name_query:
+            # Lọc sản phẩm theo tên
+            promotions = Promotion.objects.filter(name__icontains=name_query, delete_at__isnull = True)
 
         paginator = Paginator(promotions, page_size)
 

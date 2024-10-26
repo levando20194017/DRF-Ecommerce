@@ -6,6 +6,8 @@ from drfecommerce.apps.guest import views as views_guest
 from drfecommerce.apps.my_admin import views as views_admin
 from drfecommerce.apps.catalog import views as views_catalog
 from drfecommerce.apps.promotion import views as views_promotion
+from drfecommerce.apps.tag import views as views_tag
+from drfecommerce.apps.category import views as views_category
 from drfecommerce.apps.product import views as views_product
 from drfecommerce.apps.cart import views as views_cart
 from drfecommerce.apps.store import views as views_store
@@ -70,6 +72,25 @@ urlpatterns = [
     path("api/promotion/get-list-promotions/", views_promotion.PublicPromotionViewSet.as_view({'get': 'list_promotions'}), name='get-list-promotions'),
     path("api/promotion/get-detail-promotion/", views_promotion.PublicPromotionViewSet.as_view({'get': 'get_promotion'}), name='get-detail-promotion'),
     path("api/promotion/search-promotions/", views_promotion.PublicPromotionViewSet.as_view({'get': 'search_promotions'}), name='search-promotions'),
+    
+    #tag
+    #---private
+    path("api/tag/admin/get-list-tags/", views_tag.TagViewSet.as_view({'get': 'list_tags'}), name='admin-get-list-tags'),
+    path("api/tag/admin/create-new-tag/", views_tag.TagViewSet.as_view({'post': 'create_tag'}), name='admin-create-new-tag'),
+    path("api/tag/admin/delete-tag/", views_tag.TagViewSet.as_view({'delete': 'delete_tag'}), name='admin-delete-tag'),
+    path("api/tag/admin/restore-tag/", views_tag.TagViewSet.as_view({'put': 'restore_tag'}), name='admin-restore-tag'),
+    path("api/tag/admin/edit-tag/", views_tag.TagViewSet.as_view({'put': 'edit_tag'}), name='admin-edit-tag'),
+    path("api/tag/admin/get-detail-tag/", views_tag.TagViewSet.as_view({'get': 'get_tag'}), name='admin-get-detail-tag'),
+    path("api/tag/admin/search-tags/", views_tag.TagViewSet.as_view({'get': 'search_tags'}), name='admin-search-tags'),
+    
+    #category
+    #---private
+    path("api/category/admin/create-new-category/", views_category.CategoryViewSet.as_view({'post': 'create_category'}), name='admin-create-new-category'),
+    path("api/category/admin/delete-category/", views_category.CategoryViewSet.as_view({'delete': 'delete_category'}), name='admin-delete-category'),
+    path("api/category/admin/restore-category/", views_category.CategoryViewSet.as_view({'put': 'restore_category'}), name='admin-restore-category'),
+    path("api/category/admin/edit-category/", views_category.CategoryViewSet.as_view({'put': 'edit_category'}), name='admin-edit-category'),
+    path("api/category/admin/get-detail-category/", views_category.CategoryViewSet.as_view({'get': 'get_category'}), name='admin-get-detail-category'),
+    path("api/category/admin/search-categories/", views_category.CategoryViewSet.as_view({'get': 'search_categories'}), name='admin-search-categories'),
     
     #product
     #--public route
