@@ -8,6 +8,7 @@ from drfecommerce.apps.catalog import views as views_catalog
 from drfecommerce.apps.promotion import views as views_promotion
 from drfecommerce.apps.tag import views as views_tag
 from drfecommerce.apps.category import views as views_category
+from drfecommerce.apps.blog import views as views_blog
 from drfecommerce.apps.product import views as views_product
 from drfecommerce.apps.cart import views as views_cart
 from drfecommerce.apps.store import views as views_store
@@ -91,6 +92,15 @@ urlpatterns = [
     path("api/category/admin/edit-category/", views_category.CategoryViewSet.as_view({'put': 'edit_category'}), name='admin-edit-category'),
     path("api/category/admin/get-detail-category/", views_category.CategoryViewSet.as_view({'get': 'get_category'}), name='admin-get-detail-category'),
     path("api/category/admin/search-categories/", views_category.CategoryViewSet.as_view({'get': 'search_categories'}), name='admin-search-categories'),
+    
+    #blog
+    #---private
+    path("api/blog/admin/create-new-blog/", views_blog.BlogViewSet.as_view({'post': 'create_blog'}), name='admin-create-new-blog'),
+    path("api/blog/admin/delete-blog/", views_blog.BlogViewSet.as_view({'delete': 'delete_blog'}), name='admin-delete-blog'),
+    path("api/blog/admin/update-blog/", views_blog.BlogViewSet.as_view({'put': 'update_blog'}), name='admin-edit-blog'),
+    path("api/blog/admin/get-detail-blog/", views_blog.BlogViewSet.as_view({'get': 'get_blog'}), name='admin-get-detail-blog'),
+    #--public
+    path("api/blog/search-blogs/", views_blog.PublicBlogViewSet.as_view({'get': 'search_blogs'}), name='search-blogs'),
     
     #product
     #--public route

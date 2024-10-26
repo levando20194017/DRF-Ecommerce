@@ -432,9 +432,6 @@ class PublicCatalogViewSetGetData(viewsets.ViewSet):
     queryset = Catalog.objects.all()
     serializer_class = serializerGetCatalog
     
-    authentication_classes = [AdminSafeJWTAuthentication]
-    permission_classes = [IsAuthenticated]
-
     @swagger_auto_schema(manual_parameters=[
         openapi.Parameter('page_index', in_=openapi.IN_QUERY, type=openapi.TYPE_INTEGER, description='Index of the page'),
         openapi.Parameter('page_size', in_=openapi.IN_QUERY, type=openapi.TYPE_INTEGER, description='Number of items per page'),

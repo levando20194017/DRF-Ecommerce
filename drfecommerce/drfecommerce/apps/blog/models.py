@@ -11,7 +11,7 @@ class Blog(models.Model):
     slug = models.SlugField(max_length=255)
     short_description = models.TextField()
     content = models.TextField()
-    status = models.CharField(max_length=50)
+    status = models.CharField(max_length=50) #published, draft, archived
     image =  models.CharField(default= '', max_length=255, null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)

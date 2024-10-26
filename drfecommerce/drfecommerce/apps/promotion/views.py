@@ -187,7 +187,7 @@ class PromotionViewSet(viewsets.ViewSet):
             "message": "Promotion restored successfully."
         }, status=status.HTTP_200_OK)
         
-    @action(detail=False, methods=['get'], url_path="get-dettail-promotion")
+    @action(detail=False, methods=['get'], url_path="get-detail-promotion")
     def get_promotion(self, request):
         """
         Get promotion details: body data:
@@ -324,7 +324,7 @@ class PublicPromotionViewSet(viewsets.ViewSet):
             }
         }, status=status.HTTP_200_OK)
         
-    @action(detail=False, methods=['get'], url_path="get-dettail-promotion")
+    @action(detail=False, methods=['get'], url_path="get-detail-promotion")
     def get_promotion(self, request):
         """
         Get promotion details: body data:
