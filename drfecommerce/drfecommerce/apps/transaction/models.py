@@ -8,9 +8,9 @@ class Transaction(models.Model):
     order_date = models.DateTimeField()
     transaction_number = models.CharField(max_length=255)
     amount = models.FloatField()
-    bank_code = models.CharField(max_length=50)
+    bank_code = models.CharField(max_length=50, null=True, blank=True)
     bank_status = models.CharField(max_length=50)
-    bank_message = models.CharField(max_length=255)
+    bank_message = models.CharField(max_length=255, null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
     
     class Meta:

@@ -54,6 +54,8 @@ INSTALLED_APPS = [
     "drfecommerce.apps.transaction",
 ]
 
+ALLOWED_HOSTS = ['*']
+
 CORS_ALLOW_CREDENTIALS = True # to accept cookies via ajax request
 CORS_ORIGIN_WHITELIST = [
     '*' # the domain for front-end app(you can add more than 1) 
@@ -108,6 +110,10 @@ TEMPLATES = [
             ],
         },
     },
+]
+# STATIC_URL = '/static/'
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),  # Đường dẫn đến thư mục static
 ]
 
 WSGI_APPLICATION = "drfecommerce.wsgi.application"
@@ -196,3 +202,23 @@ EMAIL_HOST_USER = os.environ.get("EMAIL")  # Your email address
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_PASSWORD")  # Your email password
 DEFAULT_FROM_EMAIL = 'VIVAFLOWER <no-reply@yourdomain.com>'
 ADMIN_EMAIL = 'levando20194017@gmail.com'  # Admin email for notifications
+
+#tích hợp thanh toán qua vnpay
+VNPAY_PAYMENT_URL = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html"
+VNPAY_HASH_SECRET_KEY = "EW444FAB0B78RVKNQFNSDSM2QV1XUESW"
+VNPAY_TMN_CODE = "N9I1PEP9"
+VNPAY_RETURN_URL = "https://feasible-mutually-mullet.ngrok-free.app/api/payment_return/"
+
+#Thẻ test
+# Ngân hàng	NCB
+# Số thẻ	9704198526191432198
+# Tên chủ thẻ	NGUYEN VAN A
+# Ngày phát hành	07/15
+# Mật khẩu OTP	123456
+
+#config tạo đường dẫn BE online
+# https://dashboard.ngrok.com/get-started/your-authtoken
+#ngrok config add-authtoken 2o0D17DHeTslffmWBYUQV9sdsSt_5Kbv5JB1eNhqY8525FUYx
+#ngrok http -subdomain=feasible-mutually-mullet http://127.0.0.1:8000/   build link web qua ngrock
+# https://feasible-mutually-mullet.ngrok-free.app/api/schema/docs   địa chỉ link web backend khi build qua ngrok
+#https://sandbox.vnpayment.vn/vnpaygw-sit-testing/order/tested   hệ thống quản lí giao dịch
