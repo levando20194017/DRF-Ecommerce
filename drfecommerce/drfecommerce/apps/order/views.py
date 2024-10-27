@@ -8,6 +8,7 @@ from drfecommerce.apps.product.models import Product
 from drfecommerce.apps.cart.models import Cart, CartItem
 from drfecommerce.apps.product_store.models import ProductStore
 from drfecommerce.apps.product_sale.models import ProductSale
+from drfecommerce.apps.transaction.models import Transaction
 from drfecommerce.apps.store.models import Store
 from drfecommerce.apps.guest.models import Guest
 from drfecommerce.settings import base
@@ -22,8 +23,15 @@ from django.utils.html import strip_tags
 from django.core.paginator import Paginator
 from django.core.paginator import EmptyPage
 from django.core.paginator import PageNotAnInteger
-from datetime import datetime
+from datetime import datetime, timedelta
 from drfecommerce.apps.notification.views import create_notification
+from .payment.vnpay import vnpay
+from django.utils import timezone
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import random
+from django.shortcuts import render
+
 class OrderViewSet(viewsets.ViewSet):
     #api xử lí tạo đơn hàng khi mà người dùng chọn phương thức là thanh toán khi nhận hàng
     authentication_classes = [GuestSafeJWTAuthentication]
@@ -50,6 +58,7 @@ class OrderViewSet(viewsets.ViewSet):
         guest_id = data.get('guest_id')
         gst_amount = float(data['gst_amount'])  # Chuyển đổi gst_amount sang số
         shipping_cost = float(data['shipping_cost'])  # Chuyển đổi shipping_cost sang số
+        payment_method = data.get('payment_method')
         # Nhận order_details dưới dạng chuỗi
         order_details_str = data.get('order_details', [])
 
@@ -90,7 +99,7 @@ class OrderViewSet(viewsets.ViewSet):
         total_cost += total_cost * gst_amount + shipping_cost
 
         data['total_cost'] = total_cost
-        # data['payment_methods'] = "cash_on_delivery"
+        data['payment_methods'] = payment_method
 
         # guest = get_object_or_404(Guest, id=guest_id)
         data['guest'] = guest_id
@@ -145,87 +154,137 @@ class OrderViewSet(viewsets.ViewSet):
             )
         
             # Handle payment processing
-            payment_method = data['payment_methods']
-            if payment_method == "e_wallet":
-                return self.redirect_to_payment_gateway(order)
+            if payment_method == "credit_card":
+                return self.redirect_to_payment_gateway(request, order)
             elif payment_method == "cash_on_delivery":
                 self.send_order_email_to_admin(order)
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-    def redirect_to_payment_gateway(self, order, *args, **kwargs):
-        # Bước 1: Lấy thông tin cần thiết cho yêu cầu thanh toán
-        payment_data = {
-            "amount": order.total_cost,  # Số tiền cần thanh toán
-            "order_id": order.id,
-            # Các thông tin cần thiết khác
-        }
+    def redirect_to_payment_gateway(self, request, order, *args, **kwargs):
+        order_id = order.id
+        amount = order.total_cost
+        ipaddr = get_client_ip(request)
+        # Kiểm tra đơn hàng
+        # Các bước xử lý như hướng dẫn ở trên
+        # Khởi tạo transaction_number
+        transaction_number = order_id
 
-        # Bước 2: Gửi yêu cầu POST đến PayPal hoặc Momo API
-        paypal_url = "https://api.sandbox.paypal.com/v1/payments/payment"
-        headers = {
-            "Content-Type": "application/json",
-            "Authorization": "Bearer <Access-Token>"  # Thay Access-Token bằng token nhận được từ PayPal
-        }
-        
-        # Dữ liệu để tạo thanh toán trên PayPal
-        data = {
-            "intent": "sale",
-            "redirect_urls": {
-                "return_url": "https://your-backend-url.com/payment-success",
-                "cancel_url": "https://your-backend-url.com/payment-cancel"
-            },
-            "payer": {
-                "payment_method": "paypal"
-            },
-            "transactions": [{
-                "amount": {
-                    "total": str(order.total_cost),
-                    "currency": "USD"
-                },
-                "description": f"Order #{order.id} payment"
-            }]
-        }
-        
-        # Bước 3: Gửi yêu cầu đến PayPal API
-        response = requests.post(paypal_url, json=data, headers=headers)
-        response_data = response.json()
-        
-        # Bước 4: Kiểm tra phản hồi và lấy link thanh toán
-        if response.status_code == 201:
-            for link in response_data['links']:
-                if link['rel'] == 'approval_url':
-                    payment_url = link['href']
-                    return Response({'redirect_url': payment_url, 'amount': order.total_cost}, status=status.HTTP_302_FOUND)
-        else:
-            return Response({'error': 'Payment failed'}, status=status.HTTP_400_BAD_REQUEST)
-        
-    def payment_callback(self, request, *args, **kwargs):
-        # Nhận thông tin từ cổng thanh toán (giả sử cổng thanh toán gọi callback tới endpoint này)
-        transaction_data = request.data
-        order_id = transaction_data.get('order_id')
-        paid_amount = transaction_data.get('amount')  # Số tiền người dùng đã thanh toán
-        payment_status = transaction_data.get('status')  # Trạng thái thanh toán
-
+        # Tạo bản ghi Transaction
         try:
-            order = Order.objects.get(id=order_id)
+            Transaction.objects.create(
+                order=order,
+                order_date=timezone.now(),
+                transaction_number=transaction_number,
+                amount=amount,
+                bank_code='',           # sẽ cập nhật sau khi có phản hồi từ VNPAY
+                bank_status='pending',  # trạng thái ban đầu là "pending"
+                bank_message=''
+            )
+        except Exception:
+            return JsonResponse({"message": "Failed to create transaction", "status": 500}, status=500)
 
-            # Kiểm tra nếu số tiền thanh toán có khớp với total_cost
-            if paid_amount == order.total_cost and payment_status == 'success':
-                # Cập nhật trạng thái thanh toán của đơn hàng
-                order.payment_status = 'paid'
-                order.order_status = 'confirmed'
-                order.save()
+        vnp = vnpay()
+        vnp.requestData['vnp_Version'] = '2.1.0'
+        vnp.requestData['vnp_Command'] = 'pay'
+        vnp.requestData['vnp_TmnCode'] = base.VNPAY_TMN_CODE
+        vnp.requestData['vnp_Amount'] = int(amount * 100)
+        vnp.requestData['vnp_CurrCode'] = 'VND'
+        vnp.requestData['vnp_TxnRef'] = order_id
+        vnp.requestData['vnp_OrderInfo'] = f"Payment for Order #{order_id}"
+        vnp.requestData['vnp_CreateDate'] = datetime.now().strftime('%Y%m%d%H%M%S')  # 20150410063022
+        vnp.requestData['vnp_ReturnUrl'] = base.VNPAY_RETURN_URL
+        vnp.requestData['vnp_Locale'] = 'vn'
+        expiration_time = datetime.now() + timedelta(minutes=15)
+        # Định dạng thời gian thành 'yyyyMMddHHmmss'
+        vnp_ExpireDate = expiration_time.strftime('%Y%m%d%H%M%S')
+        # Gán vào requestData của VNPAY
+        vnp.requestData['vnp_ExpireDate'] = vnp_ExpireDate
+        vnp.requestData['vnp_IpAddr'] = ipaddr
+        vnp.requestData['vnp_OrderType'] = 190000
+        # vnp.requestData['vnp_BankCode'] = "NCB"
+        # Tạo URL thanh toán và trả về cho người dùng
+        try:
+            payment_url = vnp.get_payment_url(base.VNPAY_PAYMENT_URL, base.VNPAY_HASH_SECRET_KEY)
+        except Exception:
+            return JsonResponse({"message": "Failed to generate payment URL", "status": "error"}, status=500)
 
-                # Gửi email xác nhận
-                self.send_order_email_to_admin(order)
+        return JsonResponse({'payment_url': payment_url, 'status': 200}, status=200)
+    
+    # def redirect_to_payment_gateway(self, order, *args, **kwargs):
+    #     # Bước 1: Lấy thông tin cần thiết cho yêu cầu thanh toán
+        
+    #     payment_data = {
+    #         "amount": order.total_cost,  # Số tiền cần thanh toán
+    #         "order_id": order.id,
+    #         # Các thông tin cần thiết khác
+    #     }
 
-                return Response({'message': 'Payment successful and order confirmed.', "status":status.HTTP_200_OK}, status=status.HTTP_200_OK)
-            else:
-                return Response({'error': 'Payment amount mismatch or payment failed.', "status":status.HTTP_400_BAD_REQUEST}, status=status.HTTP_400_BAD_REQUEST)
-        except Order.DoesNotExist:
-            return Response({'error': 'Order not found.', "status":status.HTTP_404_NOT_FOUND}, status=status.HTTP_404_NOT_FOUND)
+    #     # Bước 2: Gửi yêu cầu POST đến PayPal hoặc Momo API
+    #     paypal_url = "https://api.sandbox.paypal.com/v1/payments/payment"
+    #     headers = {
+    #         "Content-Type": "application/json",
+    #         "Authorization": "Bearer <Access-Token>"  # Thay Access-Token bằng token nhận được từ PayPal
+    #     }
+        
+    #     # Dữ liệu để tạo thanh toán trên PayPal
+    #     data = {
+    #         "intent": "sale",
+    #         "redirect_urls": {
+    #             "return_url": "https://your-backend-url.com/payment-success",
+    #             "cancel_url": "https://your-backend-url.com/payment-cancel"
+    #         },
+    #         "payer": {
+    #             "payment_method": "paypal"
+    #         },
+    #         "transactions": [{
+    #             "amount": {
+    #                 "total": str(order.total_cost),
+    #                 "currency": "USD"
+    #             },
+    #             "description": f"Order #{order.id} payment"
+    #         }]
+    #     }
+        
+    #     # Bước 3: Gửi yêu cầu đến PayPal API
+    #     response = requests.post(paypal_url, json=data, headers=headers)
+    #     response_data = response.json()
+        
+    #     # Bước 4: Kiểm tra phản hồi và lấy link thanh toán
+    #     if response.status_code == 201:
+    #         for link in response_data['links']:
+    #             if link['rel'] == 'approval_url':
+    #                 payment_url = link['href']
+    #                 return Response({'redirect_url': payment_url, 'amount': order.total_cost}, status=status.HTTP_302_FOUND)
+    #     else:
+    #         return Response({'error': 'Payment failed'}, status=status.HTTP_400_BAD_REQUEST)
+        
+    # def payment_callback(self, request, *args, **kwargs):
+    #     # Nhận thông tin từ cổng thanh toán (giả sử cổng thanh toán gọi callback tới endpoint này)
+    #     transaction_data = request.data
+    #     order_id = transaction_data.get('order_id')
+    #     paid_amount = transaction_data.get('amount')  # Số tiền người dùng đã thanh toán
+    #     payment_status = transaction_data.get('status')  # Trạng thái thanh toán
+
+    #     try:
+    #         order = Order.objects.get(id=order_id)
+
+    #         # Kiểm tra nếu số tiền thanh toán có khớp với total_cost
+    #         if paid_amount == order.total_cost and payment_status == 'success':
+    #             # Cập nhật trạng thái thanh toán của đơn hàng
+    #             order.payment_status = 'paid'
+    #             order.order_status = 'confirmed'
+    #             order.save()
+
+    #             # Gửi email xác nhận
+    #             self.send_order_email_to_admin(order)
+
+    #             return Response({'message': 'Payment successful and order confirmed.', "status":status.HTTP_200_OK}, status=status.HTTP_200_OK)
+    #         else:
+    #             return Response({'error': 'Payment amount mismatch or payment failed.', "status":status.HTTP_400_BAD_REQUEST}, status=status.HTTP_400_BAD_REQUEST)
+    #     except Order.DoesNotExist:
+    #         return Response({'error': 'Order not found.', "status":status.HTTP_404_NOT_FOUND}, status=status.HTTP_404_NOT_FOUND)
 
     def send_order_email_to_admin(self, order, *args, **kwargs):
         # Gửi email với thông tin order cho admin
@@ -245,7 +304,8 @@ class OrderViewSet(viewsets.ViewSet):
                 <td>{detail.location_pickup}</td>
             </tr>
             """
-
+            
+        payment_color = "green" if order.payment_status == "paid" else "red"
         # Tạo nội dung HTML cho email
         html_message = f"""
         <html>
@@ -258,6 +318,11 @@ class OrderViewSet(viewsets.ViewSet):
                 <p><strong>GST amount:</strong> <span style="color: red;">{order.gst_amount} VND</span></p>
                 <p><strong>Total Cost:</strong> <span style="color: red;">{order.total_cost} VND</span></p>
                 <p><strong>Payment Method:</strong> {order.payment_method}</p>
+                <p><strong>Payment Status:</strong> 
+                    <span style="color: {payment_color};">
+                        {order.payment_status}
+                    </span>
+                </p>
                 <p><strong>Shipping Address:</strong> {order.shipping_address}</p>
 
                 <h3>Order Details</h3>
@@ -687,3 +752,173 @@ class AdminOrderViewSet(viewsets.ViewSet):
             "message": f"Payment status updated to {new_status}."}, status=status.HTTP_200_OK)
         
         
+# def create_payment_link(request):
+#     # Chuẩn bị dữ liệu thanh toán
+#     order_id = order.order_id
+#     amount = order.total_cost
+#     order_desc = "Payment for Order #" + str(order_id)
+    
+#     # Khởi tạo yêu cầu thanh toán VNPAY
+#     vnp = vnpay()
+#     vnp.requestData['vnp_Version'] = '2.1.0'
+#     vnp.requestData['vnp_Command'] = 'pay'
+#     vnp.requestData['vnp_TmnCode'] = base.VNPAY_TMN_CODE
+#     vnp.requestData['vnp_Amount'] = amount * 100
+#     vnp.requestData['vnp_CurrCode'] = 'VND'
+#     vnp.requestData['vnp_TxnRef'] = order_id
+#     vnp.requestData['vnp_OrderInfo'] = order_desc
+#     vnp.requestData['vnp_CreateDate'] = datetime.now().strftime('%Y%m%d%H%M%S')
+#     vnp.requestData['vnp_ReturnUrl'] = base.VNPAY_RETURN_URL
+    
+#     # Tạo URL thanh toán
+#     payment_url = vnp.get_payment_url(base.VNPAY_PAYMENT_URL, base.VNPAY_HASH_SECRET_KEY)
+    
+#     # Trả về payment URL cho frontend
+#     return JsonResponse({'payment_url': payment_url, 'status':200}, status=200)
+        
+@csrf_exempt
+@action(detail=False, methods=['get'], url_path="payment_return")
+def vnpay_return(request):
+    if request.method == 'GET':
+        # Lấy các tham số từ callback của VNPAY
+        vnp_response = request.GET.dict()
+        
+        # Xác minh chữ ký để đảm bảo phản hồi đến từ VNPAY
+        vnp = vnpay()
+        vnp.responseData = vnp_response
+        
+        # Xác minh chữ ký để đảm bảo phản hồi đến từ VNPAY
+        is_valid = vnp.validate_response(base.VNPAY_HASH_SECRET_KEY)
+        
+        if is_valid:
+            transaction_number = vnp_response.get('vnp_TxnRef')
+            order_id = vnp_response.get('vnp_TxnRef')
+            bank_code = vnp_response.get('vnp_BankCode')
+            bank_status = vnp_response.get('vnp_TransactionStatus')
+            amount = int(vnp_response.get('vnp_Amount', 0)) / 100  # chuyển đổi từ đơn vị VND
+            vnp_TransactionNo = vnp_response.get('vnp_TransactionNo')
+            vnp_ResponseCode = vnp_response.get('vnp_ResponseCode')
+            order_desc = vnp_response.get('vnp_OrderInfo')
+
+            # Cập nhật Transaction và Order
+            try:
+                transaction = Transaction.objects.get(transaction_number=transaction_number)
+                transaction.bank_code = bank_code
+                transaction.bank_status = bank_status
+                transaction.bank_message = vnp_TransactionNo
+                transaction.save()
+
+                # Cập nhật trạng thái của Order nếu thanh toán thành công
+                if bank_status == '00':  # '00' có thể là mã thanh toán thành công từ VNPAY
+                    order = Order.objects.get(id=order_id)
+                    order.payment_status = 'paid'
+                    # order.order_status = 'confirmed'
+                    order.save()
+                    subject = f"New order #{order.id} - {order.recipient_name}"
+
+                    # Lấy chi tiết đơn hàng từ OrderDetail liên kết với Order
+                    order_details_html = ""
+                    order_details = OrderDetail.objects.filter(order=order)
+
+                    # Lặp qua các chi tiết của đơn hàng và thêm chúng vào bảng HTML
+                    for detail in order_details:
+                        order_details_html += f"""
+                        <tr>
+                            <td>{detail.product_name}</td>
+                            <td>{detail.quantity}</td>
+                            <td>{detail.unit_price} VND</td>
+                            <td>{detail.location_pickup}</td>
+                        </tr>
+                        """
+                        
+                    payment_color = "green" if order.payment_status == "paid" else "red"
+                    # Tạo nội dung HTML cho email
+                    html_message = f"""
+                    <html>
+                        <body>
+                            <h2 style="color: #1a73e8;">You have a new order from {order.recipient_name}</h2>
+                            <p><strong>Order ID:</strong> {order.id}</p>
+                            <p><strong>Recipient Name:</strong> {order.recipient_name}</p>
+                            <p><strong>Phone:</strong> {order.recipient_phone}</p>
+                            <p><strong>Shipping Cost:</strong> <span style="color: red;">{order.shipping_cost} VND</span></p>
+                            <p><strong>GST amount:</strong> <span style="color: red;">{order.gst_amount} VND</span></p>
+                            <p><strong>Total Cost:</strong> <span style="color: red;">{order.total_cost} VND</span></p>
+                            <p><strong>Payment Method:</strong> {order.payment_method}</p>
+                            <p><strong>Payment Status:</strong> 
+                                <span style="color: {payment_color};">
+                                    {order.payment_status}
+                                </span>
+                            </p>
+                            <p><strong>Shipping Address:</strong> {order.shipping_address}</p>
+
+                            <h3>Order Details</h3>
+                            <table border="1" cellpadding="5" cellspacing="0">
+                                <thead>
+                                    <tr>
+                                        <th>Product Name</th>
+                                        <th>Quantity</th>
+                                        <th>Unit Price</th>
+                                        <th>Location Pickup</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {order_details_html}
+                                </tbody>
+                            </table>
+
+                            <br>
+                            <p style="color: green;">Please confirm your order now!</p>
+                        </body>
+                    </html>
+                    """
+
+                    # Tạo nội dung văn bản thuần từ HTML để đảm bảo email vẫn hiển thị ở dạng text nếu cần
+                    plain_message = strip_tags(html_message)
+
+                    # Danh sách người nhận
+                    recipient_list = [base.ADMIN_EMAIL]
+
+                    # Gửi email
+                    send_mail(
+                        subject,
+                        plain_message,  # Nội dung thuần
+                        base.DEFAULT_FROM_EMAIL,
+                        recipient_list,
+                        html_message=html_message  # Nội dung HTML
+                    )
+                else:
+                    return render(request, "payment_return.html", {"title": "Kết quả thanh toán",
+                                                                "result": "Lỗi", "order_id": order_id,
+                                                                "amount": amount,
+                                                                "order_desc": order_desc,
+                                                                "vnp_TransactionNo": vnp_TransactionNo,
+                                                                "vnp_ResponseCode": vnp_ResponseCode})
+                    
+                return render(request, "vnpay/payment_return.html", {"title": "Kết quả thanh toán",
+                                                               "result": "Thành công", "order_id": order_id,
+                                                               "amount": amount,
+                                                               "order_desc": order_desc,
+                                                               "vnp_TransactionNo": vnp_TransactionNo,
+                                                               "vnp_ResponseCode": vnp_ResponseCode})
+            except Transaction.DoesNotExist:
+                return JsonResponse({"message": "Transaction not found", "status": 404}, status=404)
+        else:
+            return JsonResponse({"message": "Invalid signature", "status": 400}, status=400)
+    return JsonResponse({"message": "Invalid request method", "status": 405}, status=405)
+
+def get_client_ip(request):
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip
+
+n = random.randint(10**11, 10**12 - 1)
+n_str = str(n)
+while len(n_str) < 12:
+    n_str = '0' + n_str
+    
+    
+def index(request):
+    return render(request, "vnpay/index.html", {"title": "Danh sách"})
