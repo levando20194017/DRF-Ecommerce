@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     "mptt",
     "rest_framework_simplejwt",
     "drf_yasg",
+    "corsheaders",
     
     # Internal Apps
     # "drfecommerce.product",
@@ -60,6 +61,8 @@ CORS_ALLOW_CREDENTIALS = True # to accept cookies via ajax request
 CORS_ORIGIN_WHITELIST = [
     '*' # the domain for front-end app(you can add more than 1) 
 ]
+CORS_ALLOWED_ORIGINS = ['http://localhost:3000']
+CORS_ALLOW_METHODS = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
 
 # Đường dẫn cục bộ cho việc lưu trữ ảnh
 ECOMMERCE_IMAGES_DIR = os.path.join(BASE_DIR, 'C:/Users/Mine/Documents/document/PROJECT/DATN/Ecommerce_Images')
@@ -86,6 +89,7 @@ MEDIA_URL = '/media/'  # Nếu bạn cần phục vụ ảnh từ URL
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "corsheaders.middleware.CorsMiddleware", 
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",

@@ -164,7 +164,7 @@ urlpatterns = [
     path("api/order/admin/update-payment-status/", views_order.AdminOrderViewSet.as_view({'put': 'update_payment_status'}), name='admin-update-payment-status'),
     
     path("api/payment_return/", views_order.vnpay_return),
-    path(r'^payment_return$', views_order.index, name='index'),
+    path('payment_return', views_order.index, name='index'),
     #rating
     path("api/review/guest-review/", views_review.ReviewViewSet.as_view({'post': 'guest_review'}), name='guest-review'),
     path("api/review/admin-reply-review/", views_review.AdminReviewViewset.as_view({'post': 'admin_reply_review'}), name='admin-reply-review'),
