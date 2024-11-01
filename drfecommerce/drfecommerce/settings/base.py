@@ -223,6 +223,6 @@ VNPAY_RETURN_URL = "https://feasible-mutually-mullet.ngrok-free.app/api/payment_
 #config tạo đường dẫn BE online
 # https://dashboard.ngrok.com/get-started/your-authtoken
 #ngrok config add-authtoken 2o0D17DHeTslffmWBYUQV9sdsSt_5Kbv5JB1eNhqY8525FUYx
-#ngrok http -subdomain=feasible-mutually-mullet http://127.0.0.1:8000/   build link web qua ngrock
+#ngrok http --url=feasible-mutually-mullet.ngrok-free.app 8000   build link web qua ngrock
 # https://feasible-mutually-mullet.ngrok-free.app/api/schema/docs   địa chỉ link web backend khi build qua ngrok
 #https://sandbox.vnpayment.vn/vnpaygw-sit-testing/order/tested   hệ thống quản lí giao dịch

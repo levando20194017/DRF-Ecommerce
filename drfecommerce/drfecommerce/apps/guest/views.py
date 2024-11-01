@@ -12,7 +12,7 @@ from django.core.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from drfecommerce.apps.guest.authentication import GuestSafeJWTAuthentication
 from rest_framework.permissions import AllowAny
-from rest_framework.decorators import action, permission_classes
+from rest_framework.decorators import action, permission_classes, authentication_classes
 from drfecommerce.apps.guest.utils import generate_access_token, generate_refresh_token
 from rest_framework import exceptions
 import os
@@ -174,7 +174,7 @@ class ChangeAvatarAPI(viewsets.ViewSet):
                 "status": 404,
                 "message": "User not found."
             })
-            
+@authentication_classes([])            
 @permission_classes([AllowAny])       
 class GuestViewSetCreate(viewsets.ViewSet):
     """
@@ -222,6 +222,7 @@ class GuestViewSetCreate(viewsets.ViewSet):
             'message': serializer.errors['email'][0]
             })
 
+@authentication_classes([])
 @permission_classes([AllowAny])
 class GuestViewSetLogin(viewsets.ViewSet):
     """
@@ -263,7 +264,8 @@ class GuestViewSetLogin(viewsets.ViewSet):
                 "status": 404,
                 "message": "Invalid email or password"
             }, status=404)
-            
+
+@authentication_classes([])            
 @permission_classes([AllowAny])
 class RefreshTokenView(viewsets.ViewSet):
     serializer_class = GuestRefreshTokenSerializer

@@ -9,7 +9,7 @@ from drfecommerce.settings import base
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from drfecommerce.apps.guest.authentication import GuestSafeJWTAuthentication
 from drfecommerce.apps.my_admin.authentication import AdminSafeJWTAuthentication
-from rest_framework.decorators import action, permission_classes
+from rest_framework.decorators import action, permission_classes, authentication_classes
 from django.core.paginator import Paginator
 from django.core.paginator import EmptyPage
 from django.core.paginator import PageNotAnInteger
@@ -228,6 +228,7 @@ class AdminReviewViewset(viewsets.ViewSet):
             "status": status.HTTP_201_CREATED
         }, status=status.HTTP_201_CREATED)
 
+@authentication_classes([])
 @permission_classes([AllowAny])
 class PublicReviewViewset(viewsets.ViewSet):
     @action(detail=False, methods=['get'], url_path="get-list-reviews")

@@ -11,7 +11,7 @@ from drfecommerce.apps.my_admin.models import MyAdmin
 from drfecommerce.apps.category.models import Category
 from drfecommerce.apps.blog_tag.models import BlogTag
 from drfecommerce.apps.tag.models import Tag
-from rest_framework.decorators import action, permission_classes
+from rest_framework.decorators import action, permission_classes, authentication_classes
 
 # Create your views here.
 class BlogViewSet(viewsets.ViewSet):
@@ -242,6 +242,8 @@ class BlogViewSet(viewsets.ViewSet):
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Category not found."
             })
+            
+@authentication_classes([])
 @permission_classes([AllowAny]) 
 class PublicBlogViewSet(viewsets.ViewSet):     
     @action(detail=False, methods=['get'], url_path="search-blogs")

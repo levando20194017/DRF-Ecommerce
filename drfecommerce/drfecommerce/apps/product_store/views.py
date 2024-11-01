@@ -1,5 +1,5 @@
 from rest_framework import status, viewsets
-from rest_framework.decorators import action, permission_classes
+from rest_framework.decorators import action, permission_classes, authentication_classes
 from rest_framework.response import Response
 from django.utils import timezone
 from drfecommerce.apps.product.models import Product
@@ -155,7 +155,8 @@ class ProductStoreViewSet(viewsets.ModelViewSet):
                 "products": serializer.data
             }
         }, status=status.HTTP_200_OK)
-        
+
+@authentication_classes([])        
 @permission_classes([AllowAny])   
 class PublicProductStoreViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'], url_path='list-stores-has-product')

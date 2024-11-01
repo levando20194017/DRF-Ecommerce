@@ -9,7 +9,7 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from drfecommerce.apps.my_admin.authentication import AdminSafeJWTAuthentication
-from rest_framework.decorators import action, permission_classes
+from rest_framework.decorators import action, permission_classes, authentication_classes
 import os
 from dotenv import load_dotenv
 from django.utils import timezone
@@ -425,7 +425,8 @@ class CatalogViewSetEditData(viewsets.ViewSet):
                 "status": 404,
                 "message": "file_name is required"
             }, status=status.HTTP_200_OK)
-            
+
+@authentication_classes([])            
 @permission_classes([AllowAny])         
 class PublicCatalogViewSetGetData(viewsets.ViewSet):
     queryset = Catalog.objects.all()

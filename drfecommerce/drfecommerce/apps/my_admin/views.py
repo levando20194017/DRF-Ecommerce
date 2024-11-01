@@ -14,7 +14,7 @@ from django.core.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from drfecommerce.apps.my_admin.authentication import AdminSafeJWTAuthentication
 from rest_framework.permissions import AllowAny
-from rest_framework.decorators import action, permission_classes
+from rest_framework.decorators import action, permission_classes, authentication_classes
 from drfecommerce.apps.my_admin.utils import generate_access_token, generate_refresh_token
 from rest_framework import exceptions
 import os
@@ -158,7 +158,7 @@ class AdminViewSetGetData(viewsets.ViewSet):
                 "status": 400,
                 "message": "Invalid ID format."
             }, status=400)
-
+@authentication_classes([])
 @permission_classes([AllowAny])
 class AdminViewSetLogin(viewsets.ViewSet):
     """
@@ -194,7 +194,8 @@ class AdminViewSetLogin(viewsets.ViewSet):
                 "status": 404,
                 "message": "Invalid email or password"
             })
-            
+
+@authentication_classes([])            
 @permission_classes([AllowAny])
 class RefreshTokenView(viewsets.ViewSet):
     serializer_class = AdminRefreshTokenSerializer

@@ -10,7 +10,7 @@ from django.core.paginator import EmptyPage
 from django.core.paginator import PageNotAnInteger
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from drfecommerce.apps.my_admin.authentication import AdminSafeJWTAuthentication
-from rest_framework.decorators import action,permission_classes
+from rest_framework.decorators import action,permission_classes, authentication_classes
 from dotenv import load_dotenv
 from django.utils import timezone
 import os
@@ -329,7 +329,8 @@ class ProductViewSet(viewsets.ViewSet):
             "message": "Images uploaded successfully!",
             "image_urls": image_urls  # Trả về danh sách các URL của ảnh đã upload
         }, status=status.HTTP_200_OK)
-        
+
+@authentication_classes([])        
 @permission_classes([AllowAny])
 class PublicProductViewset(viewsets.ViewSet):
     @action(detail=False, methods=['get'], url_path="get-list-products")

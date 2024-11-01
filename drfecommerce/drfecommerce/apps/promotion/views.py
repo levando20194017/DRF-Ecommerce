@@ -7,7 +7,7 @@ from django.core.paginator import EmptyPage
 from django.core.paginator import PageNotAnInteger
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from drfecommerce.apps.my_admin.authentication import AdminSafeJWTAuthentication
-from rest_framework.decorators import action, permission_classes
+from rest_framework.decorators import action, permission_classes, authentication_classes
 from dotenv import load_dotenv
 from django.utils import timezone
 
@@ -286,6 +286,8 @@ class PromotionViewSet(viewsets.ViewSet):
                 "promotions": serializer.data
             }
         }, status=status.HTTP_200_OK)
+
+@authentication_classes([])
 @permission_classes([AllowAny])
 class PublicPromotionViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['get'], url_path="get-list-promotions")
