@@ -255,7 +255,7 @@ class PromotionViewSet(viewsets.ViewSet):
         API to search products by name with pagination.
         - page_index (default=1)
         - page_size (default=10)
-        - name: product name to search
+        - name: promotion name to search
         """
         page_index = int(request.GET.get('page_index', 1))
         page_size = int(request.GET.get('page_size', 10))
