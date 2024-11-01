@@ -28,7 +28,7 @@ class OrderDetailViewSet(viewsets.ModelViewSet):
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
                 "message": "Order ID is required."
-            }, status=status.HTTP_400_BAD_REQUEST)
+            })
 
         try:
             order = Order.objects.get(id=order_id)
@@ -36,7 +36,7 @@ class OrderDetailViewSet(viewsets.ModelViewSet):
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Order not found."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
             
         try:
             order_detail = OrderDetail.objects.get(order=order)
@@ -49,5 +49,5 @@ class OrderDetailViewSet(viewsets.ModelViewSet):
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Order detail not found."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
             

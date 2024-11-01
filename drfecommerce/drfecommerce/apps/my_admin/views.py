@@ -193,7 +193,7 @@ class AdminViewSetLogin(viewsets.ViewSet):
             return Response({
                 "status": 404,
                 "message": "Invalid email or password"
-            }, status=404)
+            })
             
 @permission_classes([AllowAny])
 class RefreshTokenView(viewsets.ViewSet):
@@ -240,7 +240,7 @@ class AdminViewsetUploadImage(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
                 "message": "No image file found in request."
-            }, status=status.HTTP_400_BAD_REQUEST)
+            })
 
         image = request.FILES['file']
         img_name = image.name

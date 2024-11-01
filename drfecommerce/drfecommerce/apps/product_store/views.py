@@ -28,7 +28,7 @@ class ProductStoreViewSet(viewsets.ModelViewSet):
         product_id = request.query_params.get('product_id')
 
         if not product_id:
-            return Response({"message": "Product ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message": "Product ID is required."})
         
         try:
             product = Product.objects.get(id = product_id)
@@ -36,7 +36,7 @@ class ProductStoreViewSet(viewsets.ModelViewSet):
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Product not found."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
 
         try:
             # Get the ProductIncoming entry
@@ -52,12 +52,12 @@ class ProductStoreViewSet(viewsets.ModelViewSet):
                 return Response({
                     "status": status.HTTP_400_BAD_REQUEST,
                     "message": "Product has already been deleted."
-                }, status=status.HTTP_400_BAD_REQUEST)
+                })
         except ProductStore.DoesNotExist:
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Product not found."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
             
     @action(detail=True, methods=['get'], url_path='list-products-in-store')
     def list_products_in_store(self, request, pk=None):
@@ -78,7 +78,7 @@ class ProductStoreViewSet(viewsets.ModelViewSet):
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Store not found."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
 
         products = ProductStore.objects.filter(store=store)
 
@@ -125,7 +125,7 @@ class ProductStoreViewSet(viewsets.ModelViewSet):
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Store not found."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
 
         products = ProductStore.objects.filter(store=store)
 
@@ -172,14 +172,14 @@ class PublicProductStoreViewSet(viewsets.ModelViewSet):
         product_id = request.GET.get('product_id')
 
         if not product_id:
-            return Response({"message": "Product ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message": "Product ID is required."})
         try:
             product = Product.objects.get(id = product_id)
         except Product.DoesNotExist:
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Product not found."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
             
         stores_has_product = ProductStore.objects.filter(product = product)
             
@@ -223,14 +223,14 @@ class PublicProductStoreViewSet(viewsets.ModelViewSet):
         product_id = request.GET.get('product_id')
         
         if not product_id:
-            return Response({"message": "Product ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message": "Product ID is required."})
         try:
             product = Product.objects.get(id = product_id)
         except Product.DoesNotExist:
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Product not found."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
             
         stores_has_product = ProductStore.objects.filter(product = product)
         
@@ -274,16 +274,16 @@ class PublicProductStoreViewSet(viewsets.ModelViewSet):
         store_id = request.GET.get('store_id')
 
         if not product_id:
-            return Response({"message": "Product ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message": "Product ID is required."})
         if not store_id:
-            return Response({"message": "Store ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message": "Store ID is required."})
         try:
             product = Product.objects.get(id = product_id)
         except Product.DoesNotExist:
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Product not found."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
         
         try:
             store = Store.objects.get(id = store_id)
@@ -291,7 +291,7 @@ class PublicProductStoreViewSet(viewsets.ModelViewSet):
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Store not found."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
                 
         detail_product = ProductStore.objects.filter(product = product, store= store)
             

@@ -131,13 +131,13 @@ class GuestViewSetChangeInfor(viewsets.ViewSet):
                     "message": "Change user information successfully!",
                     "data": serializerInfo.data
                 }, status=status.HTTP_200_OK)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response(serializer.errors)
             
         except Guest.DoesNotExist:
             return Response({
                 "status": 404,
                 "message": "User not found."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
 
 class ChangeAvatarAPI(viewsets.ViewSet):
     serializer_class = GuestSerializerChangeAvatar
@@ -173,7 +173,7 @@ class ChangeAvatarAPI(viewsets.ViewSet):
             return Response({
                 "status": 404,
                 "message": "User not found."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
             
 @permission_classes([AllowAny])       
 class GuestViewSetCreate(viewsets.ViewSet):

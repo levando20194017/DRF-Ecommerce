@@ -53,7 +53,7 @@ class NotificationViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
                 "message": "Guest ID is required."
-            }, status=status.HTTP_400_BAD_REQUEST)
+            })
 
         try:
             guest = Guest.objects.get(id=guest_id)
@@ -61,7 +61,7 @@ class NotificationViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Guest not found."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
             
         notifications = Notification.objects.filter(guest=guest)
         
@@ -100,7 +100,7 @@ class NotificationViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
                 "message": "Noti ID is required."
-            }, status=status.HTTP_400_BAD_REQUEST)
+            })
 
         try:
             noti = Notification.objects.get(id=noti_id)
@@ -108,7 +108,7 @@ class NotificationViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Notification not found."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
             
         if not noti.is_read:
             noti.is_read = True

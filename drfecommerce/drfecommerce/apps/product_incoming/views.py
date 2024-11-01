@@ -45,9 +45,9 @@ class ProductIncomingViewSet(viewsets.ViewSet):
             product = Product.objects.get(id=product_id)
             store = Store.objects.get(id=store_id)
         except Product.DoesNotExist:
-            return Response({"message": "Product not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"message": "Product not found."})
         except Store.DoesNotExist:
-            return Response({"message": "Store not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"message": "Store not found."})
 
         # Create a new ProductIncoming entry
         product_incoming = ProductIncoming.objects.create(
@@ -82,13 +82,13 @@ class ProductIncomingViewSet(viewsets.ViewSet):
         product_incoming_id = request.query_params.get('id')
 
         if not product_incoming_id:
-            return Response({"message": "ProductIncoming ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message": "ProductIncoming ID is required."})
 
         try:
             # Get the ProductIncoming entry
             product_incoming = ProductIncoming.objects.get(id=product_incoming_id)
         except ProductIncoming.DoesNotExist:
-            return Response({"message": "ProductIncoming not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"message": "ProductIncoming not found."})
 
         # Update ProductStore before deletion
         try:
@@ -97,7 +97,7 @@ class ProductIncomingViewSet(viewsets.ViewSet):
             product_store.remaining_stock -= product_incoming.quantity_in  # Decrease the remaining stock
             product_store.save()
         except ProductStore.DoesNotExist:
-            return Response({"message": "ProductStore not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"message": "ProductStore not found."})
 
         # Finally, delete ProductIncoming entry
         product_incoming.delete()
@@ -177,7 +177,7 @@ class ProductIncomingViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
                 "message": "Product incoming ID is required."
-            }, status=status.HTTP_400_BAD_REQUEST)
+            })
             
         try:
             product_incoming = ProductIncoming.objects.get(id=product_incoming_id)
@@ -185,7 +185,7 @@ class ProductIncomingViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "ProductIncoming not found."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
 
         serializer = ProductIncomingDetailSerializer(product_incoming)
         return Response({

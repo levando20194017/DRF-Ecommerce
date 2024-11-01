@@ -47,9 +47,9 @@ class BlogViewSet(viewsets.ViewSet):
             category = Category.objects.get(id=category_id)
         except Exception as e:
             return Response({
-                "status": status.HTTP_400_BAD_REQUEST,
+                "status": 400,
                 "message": f"Error: {str(e)}"
-            }, status=status.HTTP_400_BAD_REQUEST)
+            })
         try:
             blog = Blog.objects.create(
                 admin=admin,
@@ -72,18 +72,18 @@ class BlogViewSet(viewsets.ViewSet):
                         BlogTag.objects.create(blog=blog, tag=tag)
             
             return Response({
-                "status": status.HTTP_200_OK,
+                "status": 200,
                 "message": "category created successfully!",
                 "data": {
                     "id": blog.id,
                     "name": blog.name,
                 }
-            }, status=status.HTTP_201_CREATED)
+            })
         except Exception as e:
             return Response({
-                "status": status.HTTP_400_BAD_REQUEST,
+                "status":400,
                 "message": str(e)
-            }, status=status.HTTP_400_BAD_REQUEST)
+            })
 
     @action(detail=False, methods=['put'], url_path="update-blog")
     def update_blog(self, request):
@@ -113,9 +113,9 @@ class BlogViewSet(viewsets.ViewSet):
 
         if not blog_id:
             return Response({
-                "status": status.HTTP_400_BAD_REQUEST,
+                "status": 400,
                 "message": "Blog ID is required."
-            }, status=status.HTTP_400_BAD_REQUEST)
+            })
 
         try:
             blog = Blog.objects.get(id=blog_id)
@@ -145,24 +145,24 @@ class BlogViewSet(viewsets.ViewSet):
                         BlogTag.objects.create(blog=blog, tag=tag)
 
             return Response({
-                "status": status.HTTP_200_OK,
+                "status": 200,
                 "message": "Blog updated successfully!",
                 "data": {
                     "id": blog.id,
                     "title": blog.title,
                 }
-            }, status=status.HTTP_200_OK)
+            })
 
         except Blog.DoesNotExist:
             return Response({
-                "status": status.HTTP_404_NOT_FOUND,
+                "status": 404,
                 "message": "Blog not found."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
         except Exception as e:
             return Response({
-                "status": status.HTTP_400_BAD_REQUEST,
+                "status": 400,
                 "message": str(e)
-            }, status=status.HTTP_400_BAD_REQUEST)
+            })
 
     @action(detail=False, methods=['delete'], url_path="delete-blog")
     def delete_blog(self, request):
@@ -173,9 +173,9 @@ class BlogViewSet(viewsets.ViewSet):
         blog_id = request.query_params.get('blog_id')
         if not blog_id:
             return Response({
-                "status": status.HTTP_400_BAD_REQUEST,
+                "status": 400,
                 "message": "Blog ID is required."
-            }, status=status.HTTP_400_BAD_REQUEST)
+            })
 
         try:
             # Xóa tất cả các BlogTag liên kết với Blog
@@ -192,14 +192,14 @@ class BlogViewSet(viewsets.ViewSet):
 
         except Blog.DoesNotExist:
             return Response({
-                "status": status.HTTP_404_NOT_FOUND,
+                "status": 404,
                 "message": "Blog not found."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
         except Exception as e:
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
                 "message": str(e)
-            }, status=status.HTTP_400_BAD_REQUEST)
+            })
         
     @action(detail=False, methods=['get'], url_path="get-detail-blog")
     def get_blog(self, request):
@@ -212,7 +212,7 @@ class BlogViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
                 "message": "Blog ID is required."
-            }, status=status.HTTP_400_BAD_REQUEST)
+            })
 
         try:
             blog = Blog.objects.get(id=blog_id)
@@ -241,7 +241,7 @@ class BlogViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Category not found."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
 @permission_classes([AllowAny]) 
 class PublicBlogViewSet(viewsets.ViewSet):     
     @action(detail=False, methods=['get'], url_path="search-blogs")

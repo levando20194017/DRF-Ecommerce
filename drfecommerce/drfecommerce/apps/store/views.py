@@ -46,7 +46,7 @@ class StoreViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
                 "message": serializer.errors
-            }, status=status.HTTP_400_BAD_REQUEST)
+            })
     
     @action(detail=False, methods=['put'], url_path="edit-store")
     def edit_store(self, request):
@@ -60,7 +60,7 @@ class StoreViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
                 "message": "Store ID is required."
-            }, status=status.HTTP_400_BAD_REQUEST)
+            })
         
         try:
             store = Store.objects.get(id=store_id)
@@ -68,7 +68,7 @@ class StoreViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Store not found."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
 
         # Cập nhật chỉ những trường có trong request.data (partial=True)
         serializer = StoreSerializer(store, data=request.data, partial=True)
@@ -83,7 +83,7 @@ class StoreViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
                 "message": serializer.errors
-            }, status=status.HTTP_400_BAD_REQUEST)
+            })
 
     @action(detail=False, methods=['delete'], url_path="delete-store")
     def delete_store(self, request):
@@ -96,7 +96,7 @@ class StoreViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
                 "message": "Store ID is required."
-            }, status=status.HTTP_400_BAD_REQUEST)
+            })
         
         try:
             store = Store.objects.get(id=store_id)
@@ -110,7 +110,7 @@ class StoreViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Store not found."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
     
     @action(detail=False, methods=['put'], url_path="restore-store")
     def restore_store(self, request):
@@ -123,7 +123,7 @@ class StoreViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
                 "message": "Store ID is required."
-            }, status=status.HTTP_400_BAD_REQUEST)
+            })
         
         try:
             store = Store.objects.get(id=store_id, delete_at__isnull=False)
@@ -131,7 +131,7 @@ class StoreViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Store not found or already restored."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
         
         store.delete_at = None
         store.save()
@@ -151,7 +151,7 @@ class StoreViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
                 "message": "Store ID is required."
-            }, status=status.HTTP_400_BAD_REQUEST)
+            })
         
         try:
             store = Store.objects.get(id=store_id)
@@ -164,7 +164,7 @@ class StoreViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Store not found."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
     
     @action(detail=False, methods=['get'], url_path="get-list-stores")
     def list_stores(self, request):

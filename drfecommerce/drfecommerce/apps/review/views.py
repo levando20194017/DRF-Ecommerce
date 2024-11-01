@@ -43,7 +43,7 @@ class ReviewViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
                 "message": "Guest ID is required."
-            }, status=status.HTTP_400_BAD_REQUEST)
+            })
 
         try:
             guest = Guest.objects.get(id=guest_id)
@@ -51,25 +51,25 @@ class ReviewViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Guest not found."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
         # Kiểm tra xem OrderDetail có tồn tại hay không
         try:
             order_detail = OrderDetail.objects.get(id=order_detail_id, product_id=product_id, order__guest=guest)
         except OrderDetail.DoesNotExist:
             return Response({'error': 'Invalid order detail or product.',
-                             'status': 400}, status=status.HTTP_400_BAD_REQUEST)
+                             'status': 400})
         
         # Kiểm tra trạng thái của order
         if order_detail.order.order_status != 'delivered':
             return Response({'error': 'You can only review a product after the order has been delivered.',
                              'status': 403
-                             }, status=status.HTTP_403_FORBIDDEN)
+                             })
         
         #Kiểm tra xem người dùng đã đánh giá sản phẩm này trong order này chưa
         if Review.objects.filter(guest=guest, order_detail=order_detail, product_id=product_id).exists():
             return Response({'error': 'You have already submitted a review for this product in this order.',
                              'status': 400
-                             }, status=status.HTTP_400_BAD_REQUEST)
+                             })
         
         # Tạo đánh giá
         review = Review.objects.create(
@@ -111,7 +111,7 @@ class ReviewViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
                 "message": "Guest ID is required."
-            }, status=status.HTTP_400_BAD_REQUEST)
+            })
 
         try:
             guest = Guest.objects.get(id=guest_id)
@@ -119,14 +119,14 @@ class ReviewViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Guest not found."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
         try:
             review = Review.objects.get(guest=guest, product_id=product_id, store_id = store_id)
         except Review.DoesNotExist:
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Review not found."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
         review.comment = comment
         review.rating = rating
         review.gallery = gallery
@@ -153,7 +153,7 @@ class ReviewViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
                 "message": "Guest ID is required."
-            }, status=status.HTTP_400_BAD_REQUEST)
+            })
 
         try:
             guest = Guest.objects.get(id=guest_id)
@@ -161,14 +161,14 @@ class ReviewViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Guest not found."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
         try:
             review = Review.objects.get(guest=guest, product_id=product_id, store_id = store_id)
         except Review.DoesNotExist:
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Review not found."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
         review.delete()
         return Response({
             "data": "Delete reiew successfully",
@@ -195,7 +195,7 @@ class AdminReviewViewset(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
                 "message": "Review ID is required."
-            }, status=status.HTTP_400_BAD_REQUEST)
+            })
 
         try:
             review = Review.objects.get(id=review_id)
@@ -203,7 +203,7 @@ class AdminReviewViewset(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Review not found."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
 
         # Create the reply
         reply_review = ReviewReply.objects.create(

@@ -44,7 +44,7 @@ class TagViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
                 "message": str(e)
-            }, status=status.HTTP_400_BAD_REQUEST)
+            })
 
     @action(detail=False, methods=['put'], url_path="edit-tag")
     def edit_tag(self, request):
@@ -69,12 +69,12 @@ class TagViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Tag not found."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
         except Exception as e:
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
                 "message": str(e)
-            }, status=status.HTTP_400_BAD_REQUEST)
+            })
 
     @action(detail=False, methods=['delete'], url_path="delete-tag")
     def delete_tag(self, request):
@@ -87,7 +87,7 @@ class TagViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
                 "message": "Tag ID is required."
-            }, status=status.HTTP_400_BAD_REQUEST)
+            })
 
         try:
             # Get the tag associated with the provided tag_id
@@ -108,12 +108,12 @@ class TagViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Tag not found."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
         except Exception as e:
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
                 "message": str(e)
-            }, status=status.HTTP_400_BAD_REQUEST)
+            })
 
     @action(detail=False, methods=['put'], url_path="restore-tag")
     def restore_tag(self, request):
@@ -127,7 +127,7 @@ class TagViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
                 "message": "Tag ID is required."
-            }, status=status.HTTP_400_BAD_REQUEST)
+            })
 
         try:
             tag = Tag.objects.get(id=tag_id, delete_at__isnull=False)
@@ -135,7 +135,7 @@ class TagViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Tag not found or already restored."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
 
         # Khôi phục catalog và các catalog con của nó
         tag.delete_at = None
@@ -157,7 +157,7 @@ class TagViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
                 "message": "Tag ID is required."
-            }, status=status.HTTP_400_BAD_REQUEST)
+            })
 
         try:
             tag = Tag.objects.get(id=tag_id)
@@ -170,7 +170,7 @@ class TagViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Tag not found."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
 
     @action(detail=False, methods=['get'], url_path="get-list-tags")
     def list_tags(self, request):

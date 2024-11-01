@@ -151,7 +151,7 @@ class CatalogViewSetGetData(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
                 "message": "Catalog ID is required."
-            }, status=status.HTTP_400_BAD_REQUEST)
+            })
 
         try:
             catalog = Catalog.objects.get(id=catalog_id)
@@ -164,7 +164,7 @@ class CatalogViewSetGetData(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Catalog not found."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
             
 class CatalogViewSetCreateData(viewsets.ViewSet):
     serializer_class = serializerCreateCatalog
@@ -233,7 +233,7 @@ class CatalogViewSetCreateData(viewsets.ViewSet):
             return Response({
                 "status": 404,
                 "message": "Catalog parent not found."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
         
 class CatalogViewSetDeleteData(viewsets.ViewSet):
     authentication_classes = [AdminSafeJWTAuthentication]
@@ -250,7 +250,7 @@ class CatalogViewSetDeleteData(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
                 "message": "Catalog ID is required."
-            }, status=status.HTTP_400_BAD_REQUEST)
+            })
 
         try:
             catalog = Catalog.objects.get(id=catalog_id, delete_at__isnull=True)
@@ -258,7 +258,7 @@ class CatalogViewSetDeleteData(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Catalog not found or already deleted."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
 
         # Perform soft delete on the catalog and its child catalogs
         self.soft_delete_catalog_and_children(catalog)
@@ -299,8 +299,7 @@ class CatalogViewSetRestoreData(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
                 "message": "Catalog ID is required."
-            }, status=status.HTTP_400_BAD_REQUEST)
-
+            })
         try:
             # Tìm catalog bị xóa mềm (tức là có delete_at không null)
             catalog = Catalog.objects.get(id=catalog_id, delete_at__isnull=False)
@@ -308,7 +307,7 @@ class CatalogViewSetRestoreData(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Catalog not found or already restored."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
 
         # Khôi phục catalog và các catalog con của nó
         self.restore_catalog_and_children(catalog)
@@ -355,7 +354,7 @@ class CatalogViewSetEditData(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
                 "message": "Catalog ID is required."
-            }, status=status.HTTP_400_BAD_REQUEST)
+            })
 
         try:
             catalog = Catalog.objects.get(id=catalog_id)
@@ -363,7 +362,7 @@ class CatalogViewSetEditData(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Catalog does not exist."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
 
         # Chỉ cập nhật nếu trường đó được gửi lên từ request
         if name:
@@ -396,14 +395,14 @@ class CatalogViewSetEditData(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
                 "message": "Catalog ID is required."
-            }, status=status.HTTP_400_BAD_REQUEST)
+            })
         try:
             catalog = Catalog.objects.get(id = catalog_id)
         except Catalog.DoesNotExist:
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Catalog not found or already deleted."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
         
         if img_name:
             # Lưu file ảnh vào đường dẫn cục bộ

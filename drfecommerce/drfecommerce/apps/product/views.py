@@ -158,7 +158,7 @@ class ProductViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
                 "message": f"Error: {str(e)}"
-            }, status=status.HTTP_400_BAD_REQUEST)
+            })
             
     @action(detail=False, methods=['put'], url_path="edit-product")
     def edit_product(self, request):
@@ -234,12 +234,12 @@ class ProductViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Product not found."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
         except Promotion.DoesNotExist:
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Promotion not found."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
                      
     @action(detail=False, methods=['delete'], url_path="delete-product")
     def delete_product(self, request):
@@ -252,7 +252,7 @@ class ProductViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
                 "message": "Product ID is required."
-            }, status=status.HTTP_400_BAD_REQUEST)
+            })
 
         try:
             product = Product.objects.get(id=product_id)
@@ -267,7 +267,7 @@ class ProductViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Product not found."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
         
     @action(detail=False, methods=['put'], url_path="restore-product")
     def restore_product(self, request):
@@ -281,7 +281,7 @@ class ProductViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
                 "message": "Product ID is required."
-            }, status=status.HTTP_400_BAD_REQUEST)
+            })
 
         try:
             # Tìm product bị xóa mềm (tức là có delete_at không null)
@@ -290,7 +290,7 @@ class ProductViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Product not found or already restored."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
         # Khôi phục catalog và các catalog con của nó
         product.delete_at = None
         product.save() 
@@ -308,7 +308,7 @@ class ProductViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
                 "message": "No image files found in request."
-            }, status=status.HTTP_400_BAD_REQUEST)
+            })
 
         files = request.FILES.getlist('files')  # Lấy danh sách các file từ request
         image_urls = []  # Danh sách lưu URL của các ảnh đã upload
@@ -377,7 +377,7 @@ class PublicProductViewset(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
                 "message": "Product ID is required."
-            }, status=status.HTTP_400_BAD_REQUEST)
+            })
 
         try:
             product = Product.objects.get(id=product_id)
@@ -390,7 +390,7 @@ class PublicProductViewset(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Product not found."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
             
     @action(detail=False, methods=['get'], url_path="get-list-products-by-catalog")
     def list_products_by_catalog(self, request):
@@ -420,12 +420,12 @@ class PublicProductViewset(viewsets.ViewSet):
                 return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Catalog not found."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
         except Catalog.DoesNotExist:
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Catalog not found."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
             
         products = Product.objects.filter(catalog_id = catalog_id, delete_at__isnull=True)
         paginator = Paginator(products, page_size)
@@ -472,12 +472,12 @@ class PublicProductViewset(viewsets.ViewSet):
                     return Response({
                     "status": status.HTTP_404_NOT_FOUND,
                     "message": "Promotion not found."
-                }, status=status.HTTP_404_NOT_FOUND)
+                })
             except Promotion.DoesNotExist:
                 return Response({
                     "status": status.HTTP_404_NOT_FOUND,
                     "message": "Promotion not found."
-                }, status=status.HTTP_404_NOT_FOUND)
+                })
                 
         products = Product.objects.filter(promotion_id = promotion_id, delete_at__isnull=True)
         paginator = Paginator(products, page_size)
