@@ -40,6 +40,19 @@ class PromotionViewSet(viewsets.ViewSet):
         member_price = request.data.get('member_price')
         rate = request.data.get('rate')
 
+        # Kiểm tra xem `name` đã tồn tại hay chưa
+        if Promotion.objects.filter(name=name).exists():
+            return Response({
+                "status": status.HTTP_400_BAD_REQUEST,
+                "message": "Promotion name already exists."
+            })
+
+        # Kiểm tra xem `code` đã tồn tại hay chưa
+        if Promotion.objects.filter(code=code).exists():
+            return Response({
+                "status": status.HTTP_400_BAD_REQUEST,
+                "message": "Promotion code already exists."
+            })
         try:
             promotion = Promotion.objects.create(
                 name=name,
