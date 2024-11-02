@@ -377,7 +377,7 @@ class PublicPromotionViewSet(viewsets.ViewSet):
         page_size = int(request.GET.get('page_size', 10))
         name_query = request.GET.get('name', '').strip()
         
-        promotions = Promotion.objects.all()
+        promotions = Promotion.objects.filter(delete_at__isnull = True)
         if name_query:
             # Lọc sản phẩm theo tên
             promotions = Promotion.objects.filter(name__icontains=name_query, delete_at__isnull = True)

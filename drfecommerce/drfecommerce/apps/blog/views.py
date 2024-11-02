@@ -201,6 +201,36 @@ class BlogViewSet(viewsets.ViewSet):
                 "message": str(e)
             })
         
+    @action(detail=False, methods=['put'], url_path="restore-blog")
+    def restore_blog(self, request):
+        """
+        Restore a blog and its child catalogs: body data:
+        - id
+        """
+        blog_id = request.data.get('id')
+        
+        if not blog_id:
+            return Response({
+                "status": status.HTTP_400_BAD_REQUEST,
+                "message": "Blog ID is required."
+            })
+
+        try:
+            blog = Blog.objects.get(id=blog_id, delete_at__isnull=False)
+        except Blog.DoesNotExist:
+            return Response({
+                "status": status.HTTP_404_NOT_FOUND,
+                "message": "Blog not found or already restored."
+            })
+
+        blog.delete_at = None
+        blog.save()
+
+        return Response({
+            "status": status.HTTP_200_OK,
+            "message": "Blog restored successfully."
+        }, status=status.HTTP_200_OK)
+        
     @action(detail=False, methods=['get'], url_path="get-detail-blog")
     def get_blog(self, request):
         """
@@ -243,6 +273,53 @@ class BlogViewSet(viewsets.ViewSet):
                 "message": "Category not found."
             })
             
+    @action(detail=False, methods=['get'], url_path="search-blogs")
+    def search_blogs(self, request):
+        """
+        API to search blogs by name or tag with pagination.
+        - page_index (default=1)
+        - page_size (default=10)
+        - name: blog name to search
+        - tag: tag to search for
+        """
+        page_index = int(request.GET.get('page_index', 1))
+        page_size = int(request.GET.get('page_size', 10))
+        name_query = request.GET.get('name', '').strip()
+        tag_query = request.GET.get('tag', '').strip()
+
+        # Start with all blogs
+        blogs = Blog.objects.all()
+        # Filter by name if provided
+        if name_query:
+            blogs = blogs.filter(name__icontains=name_query)
+
+        # Filter by tag if provided
+        if tag_query:
+            blogs = blogs.filter(blogtag__tag__name__icontains=tag_query).distinct()
+
+        paginator = Paginator(blogs, page_size)
+
+        try:
+            paginated_blogs = paginator.page(page_index)
+        except PageNotAnInteger:
+            paginated_blogs = paginator.page(1)
+        except EmptyPage:
+            paginated_blogs = paginator.page(paginator.num_pages)
+
+        serializer = BlogSerializer(paginated_blogs, many=True)
+
+        return Response({
+            "status": status.HTTP_200_OK,
+            "message": "OK",
+            "data": {
+                "total_pages": paginator.num_pages,
+                "total_items": paginator.count,
+                "page_index": page_index,
+                "page_size": page_size,
+                "blogs": serializer.data
+            }
+        }, status=status.HTTP_200_OK)
+            
 @authentication_classes([])
 @permission_classes([AllowAny]) 
 class PublicBlogViewSet(viewsets.ViewSet):     
@@ -261,8 +338,7 @@ class PublicBlogViewSet(viewsets.ViewSet):
         tag_query = request.GET.get('tag', '').strip()
 
         # Start with all blogs
-        blogs = Blog.objects.all()
-
+        blogs = Blog.objects.filter(delete_at__isnull = True)
         # Filter by name if provided
         if name_query:
             blogs = blogs.filter(name__icontains=name_query)
