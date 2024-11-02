@@ -190,7 +190,7 @@ class PromotionViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['get'], url_path="get-detail-promotion")
     def get_promotion(self, request):
         """
-        Get promotion details: body data:
+        query_param:
         - id
         """
         promotion_id = request.query_params.get('id')

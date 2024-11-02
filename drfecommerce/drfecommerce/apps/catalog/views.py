@@ -36,12 +36,17 @@ class CatalogViewSetGetData(viewsets.ViewSet):
         Parameters:
         - page_index: The index of the page (default is 1).
         - page_size: The number of items per page (default is 10).
+        - textSearch: searh by name
         """
         page_index = int(request.GET.get('page_index', 1))
         page_size = int(request.GET.get('page_size', 10))
+        search_term = request.GET.get('textSearch', '')
 
         # Lấy toàn bộ danh sách catalog
         catalogs = Catalog.objects.all()
+        
+        if search_term:
+            catalogs = catalogs.filter(name__icontains=search_term)
 
         # Chia trang
         paginator = Paginator(catalogs, page_size)
@@ -59,6 +64,7 @@ class CatalogViewSetGetData(viewsets.ViewSet):
             "status": 200,
             "message": "OK",
             "data": {
+                "total_items": paginator.count,
                 "total_pages": paginator.num_pages,
                 "data": data
             }
@@ -444,12 +450,16 @@ class PublicCatalogViewSetGetData(viewsets.ViewSet):
         Parameters:
         - page_index: The index of the page (default is 1).
         - page_size: The number of items per page (default is 10).
+        - textSearch: Search by name
         """
         page_index = int(request.GET.get('page_index', 1))
         page_size = int(request.GET.get('page_size', 10))
+        search_term = request.GET.get('textSearch', '')
 
         # Lấy toàn bộ danh sách catalog
         catalogs = Catalog.objects.filter(delete_at__isnull = True)
+        if search_term:
+            catalogs = catalogs.filter(name__icontains=search_term)
 
         # Chia trang
         paginator = Paginator(catalogs, page_size)
@@ -467,6 +477,7 @@ class PublicCatalogViewSetGetData(viewsets.ViewSet):
             "status": 200,
             "message": "OK",
             "data": {
+                "total_items": paginator.count,
                 "total_pages": paginator.num_pages,
                 "data": data
             }
