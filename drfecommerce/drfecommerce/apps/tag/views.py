@@ -27,6 +27,12 @@ class TagViewSet(viewsets.ViewSet):
         """
         name = request.data.get('name')
 
+        if Tag.objects.filter(name=name).exists():
+            return Response({
+                "status": status.HTTP_400_BAD_REQUEST,
+                "message": "Tag name already exists."
+            })
+            
         try:
             tag = Tag.objects.create(
                 name=name,
