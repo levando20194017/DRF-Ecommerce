@@ -7,6 +7,7 @@ from django.core.paginator import EmptyPage
 from django.core.paginator import PageNotAnInteger
 from rest_framework.permissions import IsAuthenticated
 from drfecommerce.apps.my_admin.authentication import AdminSafeJWTAuthentication
+from drfecommerce.apps.blog.models import Blog
 from rest_framework.decorators import action
 from dotenv import load_dotenv
 from django.utils import timezone
@@ -100,11 +101,13 @@ class CategoryViewSet(viewsets.ViewSet):
 
         try:
             category = Category.objects.get(id=category_id)
+             # Soft delete tất cả các blog liên quan
+            Blog.objects.filter(category_id=category_id, delete_at__isnull=True).update(delete_at=timezone.now())
             category.delete_at = timezone.now()  # Soft delete by setting delete_at
             category.save()
             return Response({
                 "status": status.HTTP_200_OK,
-                "message": "Category soft deleted successfully!"
+                "message": "Category and related blogs soft deleted successfully!"
             }, status=status.HTTP_200_OK)
         except Category.DoesNotExist:
             return Response({
@@ -133,20 +136,28 @@ class CategoryViewSet(viewsets.ViewSet):
 
         try:
             category = Category.objects.get(id=category_id, delete_at__isnull=False)
+            # Khôi phục catalog và các catalog con của nó
+            category.delete_at = None
+            category.save()
+            
+            # Khôi phục tất cả các blog liên quan
+            Blog.objects.filter(category_id=category_id, delete_at__isnull=False).update(delete_at=None)
+
+            return Response({
+                "status": status.HTTP_200_OK,
+                "message": "Category and related blogs restored successfully."
+            }, status=status.HTTP_200_OK)
         except Category.DoesNotExist:
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Category not found or already restored."
             })
+        except Exception as e:
+            return Response({
+                "status": status.HTTP_400_BAD_REQUEST,
+                "message": str(e)
+            })
 
-        # Khôi phục catalog và các catalog con của nó
-        category.delete_at = None
-        category.save()
-
-        return Response({
-            "status": status.HTTP_200_OK,
-            "message": "Category restored successfully."
-        }, status=status.HTTP_200_OK)
         
     @action(detail=False, methods=['get'], url_path="get-detail-category")
     def get_category(self, request):
