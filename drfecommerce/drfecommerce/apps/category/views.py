@@ -28,6 +28,13 @@ class CategoryViewSet(viewsets.ViewSet):
         name = request.data.get('name')
         description = request.data.get('description')
         image = request.data.get('image')
+        
+        # Kiểm tra xem `name` đã tồn tại hay chưa
+        if Category.objects.filter(name=name).exists():
+            return Response({
+                "status": status.HTTP_400_BAD_REQUEST,
+                "message": "Category name already exists."
+            })
 
         try:
             category = Category.objects.create(
