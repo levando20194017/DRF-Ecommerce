@@ -85,7 +85,7 @@ class BlogViewSet(viewsets.ViewSet):
                 "message": "category created successfully!",
                 "data": {
                     "id": blog.id,
-                    "name": blog.name,
+                    "name": blog.title,
                 }
             })
         except Exception as e:
@@ -108,6 +108,15 @@ class BlogViewSet(viewsets.ViewSet):
         - image: string
         - tag_ids: string (chuỗi nối với nhau bởi dấu phẩy)
         """
+        # x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        # if x_forwarded_for:
+        #     # Trường hợp có nhiều proxy, IP thực sẽ là cái đầu tiên trong chuỗi
+        #     ip = x_forwarded_for.split(',')[0].strip()
+        # else:
+        #     # Nếu không qua proxy, lấy IP trực tiếp từ REMOTE_ADDR
+        #     ip = request.META.get('REMOTE_ADDR')
+        # print(ip)
+        
         blog_id = request.data.get('blog_id')
         admin_id = request.data.get('admin_id')
         category_id = request.data.get('category_id')
@@ -118,33 +127,32 @@ class BlogViewSet(viewsets.ViewSet):
         image = request.data.get('image')
         tag_ids = request.data.get('tag_ids')
         
-        # Kiểm tra xem `title` đã tồn tại hay chưa
-        if Blog.objects.filter(title=title).exists():
-            return Response({
-                "status": status.HTTP_400_BAD_REQUEST,
-                "message": "Blog name already exists."
-            })
-
-        # Kiểm tra xem `slug` đã tồn tại hay chưa
-        if Blog.objects.filter(slug=slug).exists():
-            return Response({
-                "status": status.HTTP_400_BAD_REQUEST,
-                "message": "Blog slug already exists."
-            })
-
         if not blog_id:
             return Response({
                 "status": 400,
                 "message": "Blog ID is required."
             })
+            
+        # Kiểm tra xem title đã tồn tại trên các blog khác chưa
+        if Blog.objects.filter(title=title).exclude(id=blog_id).exists():
+            return Response({
+                "status": status.HTTP_400_BAD_REQUEST,
+                "message": "Blog title already exists."
+            })
+
+        # Kiểm tra xem slug đã tồn tại trên các blog khác chưa
+        if Blog.objects.filter(slug=slug).exclude(id=blog_id).exists():
+            return Response({
+                "status": status.HTTP_400_BAD_REQUEST,
+                "message": "Blog slug already exists."
+            })
 
         try:
             blog = Blog.objects.get(id=blog_id)
-            admin = MyAdmin.objects.get(id=admin_id)
+            # admin = MyAdmin.objects.get(id=admin_id)
             category = Category.objects.get(id=category_id)
 
             # Cập nhật các trường của blog'
-            blog.my_admin = admin
             blog.category = category
             blog.title = title
             blog.slug = slug
@@ -157,9 +165,8 @@ class BlogViewSet(viewsets.ViewSet):
             BlogTag.objects.filter(blog=blog).delete()
 
             # Xử lý nối vào bảng BlogTag nếu tag_ids tồn tại
-            if tag_ids:
-                tag_id_list = tag_ids.split(',')
-                for tag_id in tag_id_list:
+            if tag_ids and len(tag_ids) > 0:
+                for tag_id in tag_ids:
                     tag = Tag.objects.filter(id=tag_id).first()
                     if tag:
                         BlogTag.objects.create(blog=blog, tag=tag)

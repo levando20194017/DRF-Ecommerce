@@ -5,7 +5,7 @@ from django.utils import timezone
 
 class Blog(models.Model):
     id = models.AutoField(primary_key=True)
-    my_admin = models.ForeignKey(MyAdmin, on_delete=models.CASCADE, null=True, blank=True)
+    admin = models.ForeignKey(MyAdmin, on_delete=models.CASCADE, null=True, blank=True)
     category = models.ForeignKey(Category, on_delete=models.CASCADE, null=True, blank=True)
     title = models.CharField(max_length=255, unique=True)
     slug = models.SlugField(max_length=255, unique=True)
