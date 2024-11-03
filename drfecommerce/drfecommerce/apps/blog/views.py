@@ -40,6 +40,20 @@ class BlogViewSet(viewsets.ViewSet):
         image = request.data.get('image')
         tag_ids = request.data.get('tag_ids')
         
+        # Kiểm tra xem `title` đã tồn tại hay chưa
+        if Blog.objects.filter(title=title).exists():
+            return Response({
+                "status": status.HTTP_400_BAD_REQUEST,
+                "message": "Blog name already exists."
+            })
+
+        # Kiểm tra xem `slug` đã tồn tại hay chưa
+        if Blog.objects.filter(slug=slug).exists():
+            return Response({
+                "status": status.HTTP_400_BAD_REQUEST,
+                "message": "Blog slug already exists."
+            })
+        
         try:
             admin = MyAdmin.objects.get(id=admin_id)
             category = Category.objects.get(id=category_id)
@@ -103,6 +117,20 @@ class BlogViewSet(viewsets.ViewSet):
         content = request.data.get('content')
         image = request.data.get('image')
         tag_ids = request.data.get('tag_ids')
+        
+        # Kiểm tra xem `title` đã tồn tại hay chưa
+        if Blog.objects.filter(title=title).exists():
+            return Response({
+                "status": status.HTTP_400_BAD_REQUEST,
+                "message": "Blog name already exists."
+            })
+
+        # Kiểm tra xem `slug` đã tồn tại hay chưa
+        if Blog.objects.filter(slug=slug).exists():
+            return Response({
+                "status": status.HTTP_400_BAD_REQUEST,
+                "message": "Blog slug already exists."
+            })
 
         if not blog_id:
             return Response({
