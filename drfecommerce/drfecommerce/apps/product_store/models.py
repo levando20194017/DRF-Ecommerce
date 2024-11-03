@@ -9,6 +9,7 @@ class ProductStore(models.Model):
     product = models.ForeignKey(Product, on_delete=models.PROTECT, null=True, blank=True)
     quantity_in = models.IntegerField(default=0) # số lượng nhập vào
     remaining_stock = models.IntegerField(default=0)  # Số lượng còn lại trong kho
+    total_views = models.IntegerField(default=0) #Tổng số lượt xem sản phẩm
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     delete_at = models.DateTimeField(null=True, blank=True, default=None)

@@ -4,7 +4,7 @@ from .models import Product
 from drfecommerce.apps.my_admin.models import MyAdmin
 from drfecommerce.apps.catalog.models import Catalog
 from drfecommerce.apps.promotion.models import Promotion
-from .serializers import ProductSerializer
+from .serializers import ProductSerializer, ProductCreateSerializer
 from django.core.paginator import Paginator
 from django.core.paginator import EmptyPage
 from django.core.paginator import PageNotAnInteger
@@ -121,47 +121,56 @@ class ProductViewSet(viewsets.ViewSet):
         - material: string (max_length: 255)
         - label: string (max_length: 255)
         """
-        data = request.data
-        try:
-            admin = MyAdmin.objects.get(id=data['admin_id'])
-            catalog = Catalog.objects.get(id=data['catalog_id'])
-            promotion = Promotion.objects.get(id=data['promotion_id']) if data.get('promotion_id') else None
+        # data = request.data
+        # try:
+        #     admin = MyAdmin.objects.get(id=data['admin_id'])
+        #     catalog = Catalog.objects.get(id=data['catalog_id'])
+        #     promotion = Promotion.objects.get(id=data['promotion_id']) if data.get('promotion_id') else None
 
-            product = Product.objects.create(
-                admin=admin,
-                catalog=catalog,
-                promotion=promotion,
-                code=data['code'],
-                name=data['name'],
-                short_description=data['short_description'],
-                description=data['description'],
-                product_type=data['product_type'],
-                price=data['price'],
-                member_price=data['member_price'],
-                quantity=data['quantity'],
-                image=data['image'],
-                gallery=data['gallery'],
-                weight=data['weight'],
-                diameter=data['diameter'],
-                dimensions=data['dimensions'],
-                material=data['material'],
-                label=data['label']
-            )
-            product.save()
+        #     product = Product.objects.create(
+        #         admin=admin,
+        #         catalog=catalog,
+        #         promotion=promotion,
+        #         code=data['code'],
+        #         name=data['name'],
+        #         short_description=data['short_description'],
+        #         description=data['description'],
+        #         product_type=data['product_type'],
+        #         price=data['price'],
+        #         member_price=data['member_price'],
+        #         quantity=data['quantity'],
+        #         image=data['image'],
+        #         gallery=data['gallery'],
+        #         weight=data['weight'],
+        #         diameter=data['diameter'],
+        #         dimensions=data['dimensions'],
+        #         material=data['material'],
+        #         label=data['label']
+        #     )
+        #     product.save()
 
+        #     return Response({
+        #         "status": status.HTTP_201_CREATED,
+        #         "message": "Product created successfully!",
+        #         "data": ProductSerializer(product).data
+        #     }, status=status.HTTP_201_CREATED)
+        # except Exception as e:
+        #     return Response({
+        #         "status": status.HTTP_400_BAD_REQUEST,
+        #         "message": f"Error: {str(e)}"
+        #     })
+        serializer = ProductCreateSerializer(data=request.data)
+        if serializer.is_valid():
+            product = serializer.save()  # Lưu sản phẩm với dữ liệu đã được điền
             return Response({
-                "status": status.HTTP_201_CREATED,
-                "message": "Product created successfully!",
-                "data": ProductSerializer(product).data
+                'message': 'Product created successfully!',
+                'product_id': product.id
             }, status=status.HTTP_201_CREATED)
-        except Exception as e:
-            return Response({
-                "status": status.HTTP_400_BAD_REQUEST,
-                "message": f"Error: {str(e)}"
-            })
+        return Response({"message": serializer.errors, 
+                         "status": status.HTTP_400_BAD_REQUEST})
             
     @action(detail=False, methods=['put'], url_path="edit-product")
-    def edit_product(self, request):
+    def edit_product(self, request, pk):
         """
         API to edit an existing product.
         - id: integer
@@ -183,63 +192,82 @@ class ProductViewSet(viewsets.ViewSet):
         - material: string (max_length: 255)
         - label: string (max_length: 255)
         """
-        data = request.data
-        product_id = data.get('id')
-        try:
-            product = Product.objects.get(id=product_id)
-            promotion = Promotion.objects.get(id=data['promotion_id']) if data.get('promotion_id') else None
-            product.promotion = promotion
-            if data['sku']:
-                product.sku = data['sku']
-            if data['code']:
-                product.code = data['code']
-            if data['part_number']:
-                product.part_number = data['part_number']
-            if data['name']:
-                product.name = data['name']
-            if data['short_description']:
-                product.short_description = data['short_description']
-            if data['description']:
-                product.description = data['description']
-            if data['product_type']:
-                product.product_type = data['product_type']
-            if data['price']:
-                product.price = data['price']
-            if data['member_price']:
-                product.member_price = data['member_price']
-            if data['quantity']:
-                product.quantity = data['quantity']
-            if data['image']:
-                product.image = data['image']
-            if data['gallery']:
-                product.gallery = data['gallery']
-            if data['weight']:
-                product.weight = data['weight']
-            if data['diameter']:
-                product.diameter = data['diameter']
-            if data['dimensions']:
-                product.dimensions = data['dimensions']
-            if data['material']:
-                product.material = data['material']
-            if data['label']:
-                product.label = data['label']
-            product.save()
+        # data = request.data
+        # product_id = data.get('id')
+        # try:
+        #     product = Product.objects.get(id=product_id)
+        #     promotion = Promotion.objects.get(id=data['promotion_id']) if data.get('promotion_id') else None
+        #     product.promotion = promotion
+        #     if data['sku']:
+        #         product.sku = data['sku']
+        #     if data['code']:
+        #         product.code = data['code']
+        #     if data['part_number']:
+        #         product.part_number = data['part_number']
+        #     if data['name']:
+        #         product.name = data['name']
+        #     if data['short_description']:
+        #         product.short_description = data['short_description']
+        #     if data['description']:
+        #         product.description = data['description']
+        #     if data['product_type']:
+        #         product.product_type = data['product_type']
+        #     if data['price']:
+        #         product.price = data['price']
+        #     if data['member_price']:
+        #         product.member_price = data['member_price']
+        #     if data['quantity']:
+        #         product.quantity = data['quantity']
+        #     if data['image']:
+        #         product.image = data['image']
+        #     if data['gallery']:
+        #         product.gallery = data['gallery']
+        #     if data['weight']:
+        #         product.weight = data['weight']
+        #     if data['diameter']:
+        #         product.diameter = data['diameter']
+        #     if data['dimensions']:
+        #         product.dimensions = data['dimensions']
+        #     if data['material']:
+        #         product.material = data['material']
+        #     if data['label']:
+        #         product.label = data['label']
+        #     product.save()
 
-            return Response({
-                "status": status.HTTP_200_OK,
-                "message": "Product updated successfully!",
-                "data": ProductSerializer(product).data
-            }, status=status.HTTP_200_OK)
+        #     return Response({
+        #         "status": status.HTTP_200_OK,
+        #         "message": "Product updated successfully!",
+        #         "data": ProductSerializer(product).data
+        #     }, status=status.HTTP_200_OK)
+        # except Product.DoesNotExist:
+        #     return Response({
+        #         "status": status.HTTP_404_NOT_FOUND,
+        #         "message": "Product not found."
+        #     })
+        # except Promotion.DoesNotExist:
+        #     return Response({
+        #         "status": status.HTTP_404_NOT_FOUND,
+        #         "message": "Promotion not found."
+        #     })
+            
+        try:
+            product = Product.objects.get(id=request.data["id"])
         except Product.DoesNotExist:
+            return Response({"message": "Product not found",
+                             "status": status.HTTP_404_NOT_FOUND})
+            
+        if Product.objects.filter(name=request.data["name"]).exclude(id=request.data["id"]).exists():
             return Response({
-                "status": status.HTTP_404_NOT_FOUND,
-                "message": "Product not found."
+                "status": status.HTTP_400_BAD_REQUEST,
+                "message": "Product name already exists."
             })
-        except Promotion.DoesNotExist:
-            return Response({
-                "status": status.HTTP_404_NOT_FOUND,
-                "message": "Promotion not found."
-            })
+            
+        serializer = ProductCreateSerializer(product, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response({"message": serializer.errors,
+                         "status": status.HTTP_400_BAD_REQUEST})
                      
     @action(detail=False, methods=['delete'], url_path="delete-product")
     def delete_product(self, request):
