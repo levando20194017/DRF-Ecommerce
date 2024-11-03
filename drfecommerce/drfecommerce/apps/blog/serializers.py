@@ -3,6 +3,7 @@ from .models import Blog
 from drfecommerce.apps.blog_tag.models import BlogTag
 
 class BlogSerializer(serializers.ModelSerializer):
+    tags = serializers.SerializerMethodField()
     category_name = serializers.CharField(source='category.name', read_only=True)
     class Meta:
         model = Blog

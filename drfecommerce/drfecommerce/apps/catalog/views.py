@@ -207,7 +207,7 @@ class CatalogViewSetCreateData(viewsets.ViewSet):
                 duplicates = [catalog.name for catalog in list_catalog_children if catalog.name == name]
                 if duplicates:
                     return Response({
-                            'status': 201,
+                            'status': 400,
                             'message': "Catalog at this level already exists"
                             })
             else:
@@ -219,7 +219,7 @@ class CatalogViewSetCreateData(viewsets.ViewSet):
                 duplicates = [catalog.name for catalog in list_catalog_children if catalog.name == name]
                 if duplicates:
                     return Response({
-                            'status': 201,
+                            'status': 400,
                             'message': "Catalog at this level already exists"
                             })
                     

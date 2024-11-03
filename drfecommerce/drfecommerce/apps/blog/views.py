@@ -12,7 +12,7 @@ from drfecommerce.apps.category.models import Category
 from drfecommerce.apps.blog_tag.models import BlogTag
 from drfecommerce.apps.tag.models import Tag
 from rest_framework.decorators import action, permission_classes, authentication_classes
-
+from django.db.models import Prefetch
 # Create your views here.
 class BlogViewSet(viewsets.ViewSet):
     authentication_classes = [AdminSafeJWTAuthentication]
@@ -28,7 +28,6 @@ class BlogViewSet(viewsets.ViewSet):
         - slug: string
         - short_description: string
         - content: string
-        - status: string (#published, draft, archived)
         - image: string
         - tag_ids: string (chuỗi nối với nhau bởi dấu phẩy)
         """
@@ -38,7 +37,6 @@ class BlogViewSet(viewsets.ViewSet):
         slug = request.data.get('slug')
         short_description = request.data.get('short_description')
         content = request.data.get('content')
-        status = request.data.get('status')
         image = request.data.get('image')
         tag_ids = request.data.get('tag_ids')
         
@@ -58,15 +56,12 @@ class BlogViewSet(viewsets.ViewSet):
                 slug = slug,
                 short_description = short_description,
                 content = content,
-                status = status,
                 image = image
             )
             blog.save()
             #xử lí nối vào bảng BlogTag nếu tag_ids tồn tại
-            if tag_ids:
-                # Chuyển đổi chuỗi tag_ids thành danh sách các ID
-                tag_id_list = tag_ids.split(',')
-                for tag_id in tag_id_list:
+            if tag_ids and isinstance(tag_ids, list):
+                for tag_id in tag_ids:
                     tag = Tag.objects.filter(id=tag_id).first()  # Kiểm tra tag có tồn tại
                     if tag:
                         BlogTag.objects.create(blog=blog, tag=tag)
@@ -96,7 +91,6 @@ class BlogViewSet(viewsets.ViewSet):
         - slug: string
         - short_description: string
         - content: string
-        - status: string (#published, draft, archived)
         - image: string
         - tag_ids: string (chuỗi nối với nhau bởi dấu phẩy)
         """
@@ -107,7 +101,6 @@ class BlogViewSet(viewsets.ViewSet):
         slug = request.data.get('slug')
         short_description = request.data.get('short_description')
         content = request.data.get('content')
-        status = request.data.get('status')
         image = request.data.get('image')
         tag_ids = request.data.get('tag_ids')
 
@@ -129,7 +122,6 @@ class BlogViewSet(viewsets.ViewSet):
             blog.slug = slug
             blog.short_description = short_description
             blog.content = content
-            blog.status = status
             blog.image = image
             blog.save()
 
@@ -296,7 +288,12 @@ class BlogViewSet(viewsets.ViewSet):
         # Filter by tag if provided
         if tag_query:
             blogs = blogs.filter(blogtag__tag__name__icontains=tag_query).distinct()
-
+            
+        blogs = blogs.prefetch_related(
+                Prefetch('blogtag_set__tag'),
+                'category'
+            )
+        
         paginator = Paginator(blogs, page_size)
 
         try:
