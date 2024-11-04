@@ -47,14 +47,12 @@ class Product(models.Model):
     screen_size = models.DecimalField(max_digits=3, decimal_places=1)  # Kích thước màn hình (6.9 inches)
     screen_technology = models.CharField(max_length=100)  # Công nghệ màn hình (Super Retina XDR OLED)
     resolution = models.CharField(max_length=50)  # Độ phân giải (2868 x 1320 pixels)
-    screen_features = models.TextField()  # Tính năng màn hình
+    screen_features = models.TextField(null=True, blank=True)  # Tính năng màn hình
 
     # Camera sau
     main_camera = models.CharField(max_length=255)  # Thông tin về camera chính
-    telephoto_camera = models.CharField(max_length=255, null=True, blank=True)  # Thông tin về camera telephoto
-    ultra_wide_camera = models.CharField(max_length=255, null=True, blank=True)  # Thông tin về camera góc rộng
-    video_recording = models.TextField()  # Thông tin quay video (4K, 1080p, etc.)
-    camera_features = models.TextField()  # Tính năng camera
+    video_recording = models.TextField(null=True, blank=True)  # Thông tin quay video (4K, 1080p, etc.)
+    camera_features = models.TextField(null=True, blank=True)  # Tính năng camera
 
     # Camera trước
     front_camera = models.CharField(max_length=255)  # Camera trước
@@ -64,10 +62,7 @@ class Product(models.Model):
     gpu = models.CharField(max_length=100)  # GPU (GPU 6 lõi mới)
 
     # Giao tiếp & kết nối
-    nfc = models.BooleanField(default=False)  # Hỗ trợ NFC
-    sim_type = models.CharField(max_length=50)  # Loại SIM (nano-SIM, e-SIM)
-    network_support = models.CharField(max_length=50)  # Hỗ trợ mạng (5G, etc.)
-    gps_support = models.CharField(max_length=255)  # Hỗ trợ GPS (GLONASS, etc.)
+    network_support = models.CharField(max_length=50,null=True, blank=True)  # Hỗ trợ mạng (5G, etc.)
 
     # RAM & lưu trữ
     storage_capacity = models.IntegerField()  # Dung lượng bộ nhớ (GB)
@@ -76,24 +71,18 @@ class Product(models.Model):
     dimensions = models.CharField(max_length=50)  # Kích thước (163 x 77,6 x 8,25 mm)
     weight = models.DecimalField(max_digits=5, decimal_places=2)  # Trọng lượng (227 grams)
 
-    # Thiết kế
-    back_material = models.CharField(max_length=50)  # Chất liệu mặt lưng (Kính)
-    frame_material = models.CharField(max_length=50)  # Chất liệu khung viền (Titanium)
-    water_resistance = models.CharField(max_length=50)  # Chỉ số chống nước, bụi (IP68)
-
     # Công nghệ & Tiện ích
-    os_version = models.CharField(max_length=50)  # Hệ điều hành (iOS 18)
-    security_features = models.TextField()  # Tính năng bảo mật (Face ID)
-    other_features = models.TextField()  # Tiện ích khác (Apple Pay, SOS Khẩn Cấp, etc.)
-    audio_technologies = models.TextField()  # Công nghệ âm thanh (Dolby Atmos, AAC, etc.)
+    os_version = models.CharField(max_length=50,null=True, blank=True)  # Hệ điều hành (iOS 18)
+    security_features = models.TextField(null=True, blank=True)  # Tính năng bảo mật (Face ID)
 
     # Pin & Công nghệ sạc
-    charging_technology = models.TextField()  # Công nghệ sạc (MagSafe, Qi)
-    charging_port = models.CharField(max_length=50)  # Cổng sạc (USB Type-C)
+    charging_technology = models.TextField(null=True, blank=True)  # Công nghệ sạc (MagSafe, Qi)
+    charging_port = models.CharField(max_length=50, null=True, blank=True)  # Cổng sạc (USB Type-C)
 
     # Kết nối
-    wifi = models.CharField(max_length=50)  # Wi-Fi (Wi-Fi 7)
-    bluetooth = models.CharField(max_length=50)  # Bluetooth (5.3)
+    wifi = models.CharField(max_length=50, null=True, blank=True)  # Wi-Fi (Wi-Fi 7)
+    bluetooth = models.CharField(max_length=50, null=True, blank=True)  # Bluetooth (5.3)
+    other_info = models.CharField(max_length=255,null=True, blank=True)
 
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
