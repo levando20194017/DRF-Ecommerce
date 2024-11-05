@@ -72,12 +72,11 @@ class Product(models.Model):
     weight = models.DecimalField(max_digits=5, decimal_places=2)  # Trọng lượng (227 grams)
 
     # Công nghệ & Tiện ích
-    os_version = models.CharField(max_length=50,null=True, blank=True)  # Hệ điều hành (iOS 18)
+    version = models.CharField(max_length=50,null=True, blank=True)  # Hệ điều hành (iOS 18)
     security_features = models.TextField(null=True, blank=True)  # Tính năng bảo mật (Face ID)
 
     # Pin & Công nghệ sạc
-    charging_technology = models.TextField(null=True, blank=True)  # Công nghệ sạc (MagSafe, Qi)
-    charging_port = models.CharField(max_length=50, null=True, blank=True)  # Cổng sạc (USB Type-C)
+    charging = models.CharField(max_length=255, null=True, blank=True)  # Công nghệ sạc (MagSafe, Qi)
 
     # Kết nối
     wifi = models.CharField(max_length=50, null=True, blank=True)  # Wi-Fi (Wi-Fi 7)
