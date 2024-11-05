@@ -100,7 +100,7 @@ class ProductViewSet(viewsets.ViewSet):
     def create_product(self, request):
         """
         API to create a new product.
-        - admin_id: int
+        - admin: int
         - catalog_id: int
         - promotion_id: int allow null
         - sku: string (max_length: 50)
@@ -159,12 +159,28 @@ class ProductViewSet(viewsets.ViewSet):
         #         "status": status.HTTP_400_BAD_REQUEST,
         #         "message": f"Error: {str(e)}"
         #     })
+        admin_id = request.data.get("admin")
+        if not admin_id:
+            return Response({
+                "status": status.HTTP_400_BAD_REQUEST,
+                "message": "Admin ID is required."
+            })
+
+        try:
+            admin = MyAdmin.objects.get(id=admin_id)
+        except MyAdmin.DoesNotExist:
+            return Response({
+                "status": status.HTTP_404_NOT_FOUND,
+                "message": "Admin not found or already restored."
+            })
+            
         serializer = ProductCreateSerializer(data=request.data)
         if serializer.is_valid():
             product = serializer.save()  # Lưu sản phẩm với dữ liệu đã được điền
             return Response({
                 'message': 'Product created successfully!',
-                'product_id': product.id
+                'product_id': product.id,
+                'status': 200
             }, status=status.HTTP_201_CREATED)
         return Response({"message": serializer.errors, 
                          "status": status.HTTP_400_BAD_REQUEST})
@@ -249,6 +265,20 @@ class ProductViewSet(viewsets.ViewSet):
         #         "status": status.HTTP_404_NOT_FOUND,
         #         "message": "Promotion not found."
         #     })
+        admin_id = request.data.get("admin")
+        if not admin_id:
+            return Response({
+                "status": status.HTTP_400_BAD_REQUEST,
+                "message": "Admin ID is required."
+            })
+
+        try:
+            admin = MyAdmin.objects.get(id=admin_id)
+        except MyAdmin.DoesNotExist:
+            return Response({
+                "status": status.HTTP_404_NOT_FOUND,
+                "message": "Admin not found or already restored."
+            })
             
         try:
             product = Product.objects.get(id=request.data["id"])
