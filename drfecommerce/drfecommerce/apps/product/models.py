@@ -35,18 +35,18 @@ class Product(models.Model):
     promotion = models.ForeignKey(Promotion, on_delete=models.SET_NULL, null=True, blank=True)
     name = models.CharField(max_length=255, unique=True)
     launch_date = models.DateField(null=True, blank=True)  # Thời điểm ra mắt
-    short_description = models.CharField(max_length=255)
-    description = models.TextField()
+    short_description = models.CharField(max_length=255,null=True, blank=True)
+    description = models.TextField(null=True, blank=True)
     image = models.CharField(max_length=255)
     gallery = models.TextField()
     price = models.FloatField()
-    color = models.CharField(max_length=255)
+    color = models.CharField(max_length=255, null=True, blank=True)
     product_type = models.CharField(max_length=255)
 
     # Màn hình
     screen_size = models.DecimalField(max_digits=3, decimal_places=1)  # Kích thước màn hình (6.9 inches)
-    screen_technology = models.CharField(max_length=100)  # Công nghệ màn hình (Super Retina XDR OLED)
-    resolution = models.CharField(max_length=50)  # Độ phân giải (2868 x 1320 pixels)
+    screen_technology = models.CharField(max_length=100, null=True, blank=True)  # Công nghệ màn hình (Super Retina XDR OLED)
+    resolution = models.CharField(max_length=50, null=True, blank=True)  # Độ phân giải (2868 x 1320 pixels)
     screen_features = models.TextField(null=True, blank=True)  # Tính năng màn hình
 
     # Camera sau

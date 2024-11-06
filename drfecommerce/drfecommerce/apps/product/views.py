@@ -186,7 +186,7 @@ class ProductViewSet(viewsets.ViewSet):
                          "status": status.HTTP_400_BAD_REQUEST})
             
     @action(detail=False, methods=['put'], url_path="edit-product")
-    def edit_product(self, request, pk):
+    def edit_product(self, request):
         """
         API to edit an existing product.
         - id: integer
@@ -295,7 +295,8 @@ class ProductViewSet(viewsets.ViewSet):
         serializer = ProductCreateSerializer(product, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data)
+            return Response({"message": "Update product successfully.",
+                         "status": 200})
         return Response({"message": serializer.errors,
                          "status": status.HTTP_400_BAD_REQUEST})
                      
