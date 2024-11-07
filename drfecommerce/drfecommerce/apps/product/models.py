@@ -39,7 +39,7 @@ class Product(models.Model):
     description = models.TextField(null=True, blank=True)
     image = models.CharField(max_length=255)
     gallery = models.TextField()
-    price = models.FloatField()
+    price = models.IntegerField()
     color = models.CharField(max_length=255, null=True, blank=True)
     product_type = models.CharField(max_length=255)
 

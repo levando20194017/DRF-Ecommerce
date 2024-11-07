@@ -123,6 +123,7 @@ urlpatterns = [
     #product_incoming (liên quan đến sản phẩm nhập vào)
     path("api/product_incoming/admin/list-product-incomings/", views_product_incoming.ProductIncomingViewSet.as_view({'get': 'list_product_incomings'}), name='admin-get-list-product-incomings'),
     path("api/product_incoming/admin/create-product-incoming/", views_product_incoming.ProductIncomingViewSet.as_view({'post': 'add_product_incoming'}), name='admin-create-new-product-incoming'),
+    path("api/product_incoming/admin/edit-product-incoming/", views_product_incoming.ProductIncomingViewSet.as_view({'put': 'edit_product_incoming'}), name='admin-edit-new-product-incoming'),
     path("api/product_incoming/admin/delete-product-incoming/", views_product_incoming.ProductIncomingViewSet.as_view({'delete': 'delete_product_incoming'}), name='admin-delete-product-incoming'),
     path("api/product_incoming/admin/detail-product-incoming/", views_product_incoming.ProductIncomingViewSet.as_view({'get': 'detail_product_incoming'}), name='admin-get-detail-product-incomings'),
     path("api/product_incoming/admin/search_product_incomings/", views_product_incoming.ProductIncomingViewSet.as_view({'get': 'search_product_incomings'}), name='admin-search-product-incomings'),
