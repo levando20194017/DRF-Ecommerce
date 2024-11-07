@@ -45,9 +45,9 @@ class ProductIncomingViewSet(viewsets.ViewSet):
             product = Product.objects.get(id=product_id)
             store = Store.objects.get(id=store_id)
         except Product.DoesNotExist:
-            return Response({"message": "Product not found."})
+            return Response({"message": "Product not found.", "status" : 404})
         except Store.DoesNotExist:
-            return Response({"message": "Store not found."})
+            return Response({"message": "Store not found.", "status" : 404})
 
         # Create a new ProductIncoming entry
         product_incoming = ProductIncoming.objects.create(
@@ -68,6 +68,7 @@ class ProductIncomingViewSet(viewsets.ViewSet):
 
         return Response({
             "message": "ProductIncoming added and ProductStore updated successfully.",
+            "status": 200,
             "product_incoming": ProductIncomingSerializer(product_incoming).data,
             "product_store": ProductStoreSerializer(product_store).data
         }, status=status.HTTP_201_CREATED)
@@ -82,13 +83,13 @@ class ProductIncomingViewSet(viewsets.ViewSet):
         product_incoming_id = request.query_params.get('id')
 
         if not product_incoming_id:
-            return Response({"message": "ProductIncoming ID is required."})
+            return Response({"message": "ProductIncoming ID is required.", "status": 400})
 
         try:
             # Get the ProductIncoming entry
             product_incoming = ProductIncoming.objects.get(id=product_incoming_id)
         except ProductIncoming.DoesNotExist:
-            return Response({"message": "ProductIncoming not found."})
+            return Response({"message": "ProductIncoming not found.", "status": 404})
 
         # Update ProductStore before deletion
         try:
@@ -103,6 +104,7 @@ class ProductIncomingViewSet(viewsets.ViewSet):
         product_incoming.delete()
 
         return Response({
+            "status": 200,
             "message": "ProductIncoming deleted and ProductStore updated successfully."
         }, status=status.HTTP_200_OK)
         
