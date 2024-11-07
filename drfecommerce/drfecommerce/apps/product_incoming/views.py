@@ -94,11 +94,20 @@ class ProductIncomingViewSet(viewsets.ViewSet):
         # Update ProductStore before deletion
         try:
             product_store = ProductStore.objects.get(product=product_incoming.product, store=product_incoming.store)
-            product_store.quantity_in -= product_incoming.quantity_in  # Decrease the quantity_in
-            product_store.remaining_stock -= product_incoming.quantity_in  # Decrease the remaining stock
-            product_store.save()
+            new_quantity = product_store.quantity_in - product_incoming.quantity_in
+            new_remaining = product_store.remaining_stock - product_incoming.quantity_in
+            if new_quantity >= 0 and new_remaining >= 0:
+                product_store.quantity_in = new_quantity  # Update the quantity_in
+                product_store.remaining_stock = new_remaining  # Update the remaining stock
+                product_store.save()
+            else:
+                return Response({
+                    "status": 400,
+                    "message": "Cannot delete ProductIncoming due to insufficient stock."
+                })
+                
         except ProductStore.DoesNotExist:
-            return Response({"message": "ProductStore not found."})
+            return Response({"message": "ProductStore not found.", "status": 404})
 
         # Finally, delete ProductIncoming entry
         product_incoming.delete()
