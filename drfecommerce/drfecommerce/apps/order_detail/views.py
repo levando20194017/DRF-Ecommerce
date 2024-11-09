@@ -22,7 +22,7 @@ class OrderDetailViewSet(viewsets.ModelViewSet):
         Parameters:
         - order_id: ID or the order
         """
-        order_id = request.GET.get('order_id')
+        order_id = request.GET.get('id')
 
         if not order_id:
             return Response({

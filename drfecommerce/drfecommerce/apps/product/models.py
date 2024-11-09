@@ -34,6 +34,7 @@ class Product(models.Model):
     catalog = models.ForeignKey(Catalog, on_delete=models.PROTECT)
     promotion = models.ForeignKey(Promotion, on_delete=models.SET_NULL, null=True, blank=True)
     name = models.CharField(max_length=255, unique=True)
+    code = models.CharField(max_length=50, null=True, blank=True)
     launch_date = models.DateField(null=True, blank=True)  # Thời điểm ra mắt
     short_description = models.CharField(max_length=255,null=True, blank=True)
     description = models.TextField(null=True, blank=True)

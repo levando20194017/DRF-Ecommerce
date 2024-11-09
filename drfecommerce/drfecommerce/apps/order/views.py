@@ -87,10 +87,12 @@ class OrderViewSet(viewsets.ViewSet):
             # Kiểm tra số lượng tồn kho
             product_store = get_object_or_404(ProductStore, product=product, store=store)
             if product_store.remaining_stock < quantity:
-                return Response({"message": f"Not enough stock for {product.name}. Available: {product_store.remaining_stock}"})
+                return Response({"message": f"Not enough stock for {product.name}. Available: {product_store.remaining_stock}",
+                                 "status": 400
+                                 })
 
             if quantity <= 0:
-                return Response({"message": "Quantity must be greater than zero."})
+                return Response({"message": "Quantity must be greater than zero.", "status": 400})
 
             product = get_object_or_404(Product, id=int(detail['product_id']))
             unit_price = product.price

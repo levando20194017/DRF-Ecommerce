@@ -13,6 +13,7 @@ from drfecommerce.apps.product import views as views_product
 from drfecommerce.apps.cart import views as views_cart
 from drfecommerce.apps.store import views as views_store
 from drfecommerce.apps.order import views as views_order
+from drfecommerce.apps.transaction import views as views_transaction
 from drfecommerce.apps.review import views as views_review
 from drfecommerce.apps.order_detail import views as views_order_detail
 from drfecommerce.apps.product_incoming import views as views_product_incoming
@@ -168,6 +169,11 @@ urlpatterns = [
     
     path("api/payment_return/", views_order.vnpay_return),
     path('payment_return', views_order.index, name='index'),
+    
+    #transaction
+    path("api/transaction/admin/get-list-transactions/", views_transaction.TransactionViewSet.as_view({'get': 'search_transactions'}), name='admin-get-list-transactions'),
+    path("api/transaction/admin/get-detail-transaction/", views_transaction.TransactionViewSet.as_view({'get': 'get_transaction'}), name='admin-get-detail-transaction'),
+          
     #rating
     path("api/review/guest-review/", views_review.ReviewViewSet.as_view({'post': 'guest_review'}), name='guest-review'),
     path("api/review/admin-reply-review/", views_review.AdminReviewViewset.as_view({'post': 'admin_reply_review'}), name='admin-reply-review'),
