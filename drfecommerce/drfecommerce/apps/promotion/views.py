@@ -27,19 +27,18 @@ class PromotionViewSet(viewsets.ViewSet):
         - code: string
         - from_date: date form yyyy-mm-dd
         - to_date: date form yyyy-mm-dd
-        - special_price: float
-        - member_price: float
-        - rate: float
+        - discount_value: float
+        - discount_type: string
         """
         name = request.data.get('name')
         description = request.data.get('description')
         code = request.data.get('code')
         from_date = request.data.get('from_date')
         to_date = request.data.get('to_date')
-        special_price = request.data.get('special_price')
-        member_price = request.data.get('member_price')
-        rate = request.data.get('rate')
-
+        discount_value = request.data.get('discount_value')
+        discount_type = request.data.get('discount_type')
+        status_promotion = request.data.get('status')
+        
         # Kiểm tra xem `name` đã tồn tại hay chưa
         if Promotion.objects.filter(name=name).exists():
             return Response({
@@ -60,9 +59,9 @@ class PromotionViewSet(viewsets.ViewSet):
                 code=code,
                 from_date=from_date,
                 to_date=to_date,
-                special_price=special_price,
-                member_price=member_price,
-                rate=rate
+                discount_value = discount_value,
+                discount_type = discount_type,
+                status = status_promotion
             )
             promotion.save()
             return Response({
@@ -88,9 +87,8 @@ class PromotionViewSet(viewsets.ViewSet):
         - code: string
         - from_date
         - to_date
-        - special_price: float
-        - member_price: float
-        - rate: float
+        - discount_value: float
+        - discount_type: string
         """
         promotion_id = request.data.get('id')
         name = request.data.get('name')
@@ -98,19 +96,19 @@ class PromotionViewSet(viewsets.ViewSet):
         code = request.data.get('code')
         from_date = request.data.get('from_date')
         to_date = request.data.get('to_date')
-        special_price = request.data.get('special_price')
-        member_price = request.data.get('member_price')
-        rate = request.data.get('rate')
+        discount_value = request.data.get('discount_value')
+        discount_type = request.data.get('discount_type')
+        status_promotion = request.data.get('status')
         
         # Kiểm tra xem `name` đã tồn tại hay chưa
-        if Promotion.objects.filter(name=name).exists():
+        if Promotion.objects.filter(name=name).exclude(id=promotion_id).exists():
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
                 "message": "Promotion name already exists."
             })
 
         # Kiểm tra xem `code` đã tồn tại hay chưa
-        if Promotion.objects.filter(code=code).exists():
+        if Promotion.objects.filter(code=code).exclude(id=promotion_id).exists():
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
                 "message": "Promotion code already exists."
@@ -128,12 +126,12 @@ class PromotionViewSet(viewsets.ViewSet):
                 promotion.from_date = from_date
             if to_date:
                 promotion.to_date = to_date
-            if special_price:
-                promotion.special_price = special_price
-            if member_price:
-                promotion.member_price = member_price
-            if rate:
-                promotion.rate = rate
+            if discount_value:
+                promotion.discount_value = discount_value
+            if discount_type:
+                promotion.discount_type = discount_type
+            if status_promotion:
+                promotion.status = status_promotion
             promotion.save()
             return Response({
                 "status": status.HTTP_200_OK,

@@ -4,6 +4,7 @@ from django.core.mail import send_mail
 from .models import Order
 from .serializers import OrderSerializer
 from drfecommerce.apps.order_detail.models import OrderDetail
+from drfecommerce.apps.promotion.models import Promotion
 from drfecommerce.apps.product.models import Product
 from drfecommerce.apps.cart.models import Cart, CartItem
 from drfecommerce.apps.product_store.models import ProductStore
@@ -93,7 +94,23 @@ class OrderViewSet(viewsets.ViewSet):
 
             if quantity <= 0:
                 return Response({"message": "Quantity must be greater than zero.", "status": 400})
+            
+            unit_price = product.price
+            if product.promotion_id:
+                promotion = get_object_or_404(Promotion, id=product.promotion_id)
+                
+                today = timezone.now().date()  # Lấy ngày hiện tại
+                
+                # Kiểm tra trạng thái và thời gian hiệu lực của khuyến mãi
+                if promotion.status == "active" and promotion.from_date <= today <= promotion.to_date:
+                    if promotion.discount_type == "percentage":
+                        unit_price *= (1 - promotion.discount_value / 100)
+                    elif promotion.discount_type == "fixed":
+                        unit_price -= promotion.discount_value
+                    unit_price = max(unit_price, 0)  # Đảm bảo giá không âm
 
+            total_cost += unit_price * quantity
+        
             product = get_object_or_404(Product, id=int(detail['product_id']))
             unit_price = product.price
             total_cost += unit_price * quantity
