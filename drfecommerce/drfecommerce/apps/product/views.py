@@ -72,6 +72,7 @@ class ProductViewSet(viewsets.ViewSet):
 
         # Lọc sản phẩm theo tên
         products = Product.objects.filter(name__icontains=name_query)
+        products = products.order_by('-updated_at')
 
         paginator = Paginator(products, page_size)
 

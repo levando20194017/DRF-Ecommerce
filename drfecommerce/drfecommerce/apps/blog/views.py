@@ -371,6 +371,7 @@ class PublicBlogViewSet(viewsets.ViewSet):
 
         # Start with all blogs
         blogs = Blog.objects.filter(delete_at__isnull = True)
+        blogs = blogs.order_by('-updated_at')
         # Filter by name if provided
         if name_query:
             blogs = blogs.filter(name__icontains=name_query)

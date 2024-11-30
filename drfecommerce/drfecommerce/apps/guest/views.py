@@ -263,7 +263,7 @@ class GuestViewSetLogin(viewsets.ViewSet):
             return Response({
                 "status": 404,
                 "message": "Invalid email or password"
-            }, status=404)
+            })
 
 @authentication_classes([])            
 @permission_classes([AllowAny])

@@ -132,6 +132,8 @@ class ProductStoreViewSet(viewsets.ModelViewSet):
         # Lọc theo tên hoặc mã sản phẩm
         if product_name:
             products = products.filter(product__name__icontains=product_name)
+            
+        products = products.order_by('-updated_at')
 
         paginator = Paginator(products, page_size)
 

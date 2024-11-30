@@ -135,7 +135,7 @@ urlpatterns = [
     path("api/product_sale/admin/get-all-products-sale/", views_product_sale.AdminProductSaleViewSet.as_view({'get': 'get_all_products_sale'}), name='admin-get-all-products-sale'),
     path("api/product_sale/admin/get-total-report/", views_product_sale.AdminProductSaleViewSet.as_view({'get': 'get_total_report'}), name='get-total-report'),
     #thống kê sản phẩm đã bán (số lượng đã bán trên mỗi sản phẩm)
-    path("api/product_sale/admin/get-list-sold-products-filter/", views_product_sale.AdminProductSaleViewSet.as_view({'get': 'list_sold_products_filter'}), name='admin-get-list-sold-product-filter'),
+    path("api/product_sale/admin/get-list-sold-products-filter/", views_product_sale.PublicProductSaleViewSet.as_view({'get': 'list_sold_products_filter'}), name='admin-get-list-sold-product-filter'),
     
     #store
     #--private route

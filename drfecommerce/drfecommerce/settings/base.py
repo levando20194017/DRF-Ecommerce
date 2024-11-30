@@ -61,7 +61,7 @@ CORS_ALLOW_CREDENTIALS = True # to accept cookies via ajax request
 CORS_ORIGIN_WHITELIST = [
     '*' # the domain for front-end app(you can add more than 1) 
 ]
-CORS_ALLOWED_ORIGINS = ['http://localhost:3000']
+CORS_ALLOWED_ORIGINS = ['http://localhost:3000', 'http://localhost:3001']
 CORS_ALLOW_METHODS = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
 
 # Đường dẫn cục bộ cho việc lưu trữ ảnh
