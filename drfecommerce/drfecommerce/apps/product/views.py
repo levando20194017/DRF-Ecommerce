@@ -17,6 +17,8 @@ import os
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 from drfecommerce.settings import base
+from django.db.models import Q
+from django.db.models import Min
 
 # Load environment variables from .env file
 load_dotenv()
@@ -452,45 +454,50 @@ class PublicProductViewset(viewsets.ViewSet):
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Product not found."
             })
-            
+
     @action(detail=False, methods=['get'], url_path="get-list-products-by-catalog")
     def list_products_by_catalog(self, request):
         """
-        API to get list of products with pagination.
+        API to get list of products by catalog (including sub-catalogs) with pagination.
         - page_index (default=1)
         - page_size (default=10)
         - catalog_id: int
-        example api/get-list-products/?page_index=1&page_size=10&catalog_id=1
+        example api/get-list-products-by-catalog/?page_index=1&page_size=10&catalog_id=1
         """
         page_index = int(request.GET.get('page_index', 1))
         page_size = int(request.GET.get('page_size', 10))
-        catalog_id = request.GET.get('catalog_id') if request.GET.get('catalog_id') else None
-        
+        catalog_id = request.GET.get('catalog_id')
+
         if not catalog_id:
             return Response({
-            "status": status.HTTP_200_OK,
-            "message": "OK",
-            "data": {
-            "status": 404,
-            "message": "Catalog not found"
-            }})
-        
-        try:
-            catalog = Catalog.objects.get(id = catalog_id)
-            if catalog.delete_at is not None:
-                return Response({
-                "status": status.HTTP_404_NOT_FOUND,
-                "message": "Catalog not found."
+                "status": status.HTTP_400_BAD_REQUEST,
+                "message": "Catalog ID is required."
             })
+
+        try:
+            catalog = Catalog.objects.get(id=catalog_id, delete_at__isnull=True)
         except Catalog.DoesNotExist:
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Catalog not found."
             })
-            
-        products = Product.objects.filter(catalog_id = catalog_id, delete_at__isnull=True)
+
+        # Get all related catalogs (including the given catalog itself)
+        def get_child_catalogs(parent_catalog):
+            children = Catalog.objects.filter(parent_id=parent_catalog, delete_at__isnull=True)
+            result = list(children)
+            for child in children:
+                result.extend(get_child_catalogs(child))
+            return result
+
+        all_catalogs = [catalog] + get_child_catalogs(catalog)
+        catalog_ids = [cat.id for cat in all_catalogs]
+
+        # Filter products by all catalog IDs
+        products = Product.objects.filter(catalog_id__in=catalog_ids, delete_at__isnull=True)
+
+        # Apply pagination
         paginator = Paginator(products, page_size)
-        
         try:
             paginated_products = paginator.page(page_index)
         except PageNotAnInteger:
@@ -498,6 +505,76 @@ class PublicProductViewset(viewsets.ViewSet):
         except EmptyPage:
             paginated_products = paginator.page(paginator.num_pages)
 
+        # Serialize data
+        serializer = ProductSerializer(paginated_products, many=True)
+
+        return Response({
+            "status": status.HTTP_200_OK,
+            "message": "OK",
+            "data": {
+                "total_pages": paginator.num_pages,
+                "total_items": paginator.count,
+                "page_index": page_index,
+                "page_size": page_size,
+                "products": serializer.data
+            }
+        }, status=status.HTTP_200_OK)
+        
+    @action(detail=False, methods=['get'], url_path="get-one-product-per-catalog")
+    def list_one_product_per_catalog(self, request):
+        """
+        API to get one product from each catalog (including sub-catalogs).
+        - catalog_id: int (required)
+        """
+        page_index = int(request.GET.get('page_index', 1))
+        page_size = int(request.GET.get('page_size', 10))
+        catalog_id = request.GET.get('catalog_id')
+        
+        if not catalog_id:
+            return Response({
+                "status": status.HTTP_400_BAD_REQUEST,
+                "message": "Catalog ID is required."
+            })
+
+        try:
+            catalog = Catalog.objects.get(id=catalog_id, delete_at__isnull=True)
+        except Catalog.DoesNotExist:
+            return Response({
+                "status": status.HTTP_404_NOT_FOUND,
+                "message": "Catalog not found."
+            })
+
+        # Get all related catalogs (including the given catalog itself)
+        def get_child_catalogs(parent_catalog):
+            children = Catalog.objects.filter(parent_id=parent_catalog, delete_at__isnull=True)
+            result = list(children)
+            for child in children:
+                result.extend(get_child_catalogs(child))
+            return result
+
+        all_catalogs = [catalog] + get_child_catalogs(catalog)
+        catalog_ids = [cat.id for cat in all_catalogs]
+
+        # Get one product per catalog
+        products = Product.objects.filter(catalog_id__in=catalog_ids, delete_at__isnull=True) \
+            .values('catalog_id') \
+            .annotate(first_product_id=Min('id'))  # Lấy sản phẩm có ID nhỏ nhất trong mỗi catalog
+
+        # Fetch the detailed product data
+        product_ids = [p['first_product_id'] for p in products]
+        selected_products = Product.objects.filter(id__in=product_ids)
+
+        # Serialize the selected products
+        # Apply pagination
+        paginator = Paginator(selected_products, page_size)
+        try:
+            paginated_products = paginator.page(page_index)
+        except PageNotAnInteger:
+            paginated_products = paginator.page(1)
+        except EmptyPage:
+            paginated_products = paginator.page(paginator.num_pages)
+
+        # Serialize data
         serializer = ProductSerializer(paginated_products, many=True)
 
         return Response({

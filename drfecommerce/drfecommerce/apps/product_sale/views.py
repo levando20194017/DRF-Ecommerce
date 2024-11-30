@@ -124,7 +124,7 @@ class PublicProductSaleViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['get'], url_path="get-list-sold-products-filter")
     def list_sold_products_filter(self, request):
         """
-        Thống kê các sản phẩm đã bán (số lượng).
+        Thống kê các sản phẩm đã bán (số lượng)=> sắp xếp theo bán chạy nhất.
         Nếu không có sản phẩm bán nào, trả về danh sách sản phẩm mặc định từ bảng Product.
         """
         page_index = int(request.GET.get('page_index', 1))
@@ -156,6 +156,7 @@ class PublicProductSaleViewSet(viewsets.ViewSet):
         # Nếu danh sách sản phẩm đã bán rỗng, lấy danh sách mặc định từ bảng Product
         if not product_sales.exists():
             products = Product.objects.all()
+            products = products.order_by('-updated_at')
             # Áp dụng phân trang cho sản phẩm
             paginator = Paginator(products, page_size)
             try:

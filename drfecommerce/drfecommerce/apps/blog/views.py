@@ -402,3 +402,46 @@ class PublicBlogViewSet(viewsets.ViewSet):
                 "blogs": serializer.data
             }
         }, status=status.HTTP_200_OK)
+        
+    @action(detail=False, methods=['get'], url_path="get-detail-blog")
+    def get_blog(self, request):
+        """
+        Get category details: body data:
+        - slug: string
+        """
+        # blog_id = request.query_params.get('blog_id')
+        slug = request.query_params.get('slug')
+        if not slug:
+            return Response({
+                "status": status.HTTP_400_BAD_REQUEST,
+                "message": "slug is required."
+            })
+
+        try:
+            blog = Blog.objects.get(slug=slug)
+            serializer = BlogSerializer(blog)
+            
+            blog_tags = BlogTag.objects.filter(blog_id = blog.id, delete_at__isnull=True)
+            
+            tag_ids = blog_tags.values_list('tag__id', flat=True)
+            tag_names = blog_tags.values_list('tag__name', flat=True)
+            
+            # Create comma-separated strings
+            tags = ','.join(map(str, tag_ids))
+            tag_names_str = ','.join(tag_names)
+            
+            # Add to response data
+            response_data = serializer.data
+            response_data['tags'] = tags
+            response_data['tag_names'] = tag_names_str
+
+            return Response({
+                "status": status.HTTP_200_OK,
+                "data": response_data
+            }, status=status.HTTP_200_OK)
+        
+        except Category.DoesNotExist:
+            return Response({
+                "status": status.HTTP_404_NOT_FOUND,
+                "message": "Category not found."
+            })

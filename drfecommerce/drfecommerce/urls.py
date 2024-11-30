@@ -104,7 +104,7 @@ urlpatterns = [
     path("api/blog/admin/search-blogs/", views_blog.BlogViewSet.as_view({'get': 'search_blogs'}), name='admin-search-blogs'),
     #--public
     path("api/blog/search-blogs/", views_blog.PublicBlogViewSet.as_view({'get': 'search_blogs'}), name='search-blogs'),
-    
+    path("api/blog/get-detail-blog/", views_blog.PublicBlogViewSet.as_view({'get': 'get_blog'}), name='get-detail-blog'),
     #product
     #--public route
     path("api/product/get-list-products/", views_product.PublicProductViewset.as_view({'get': 'list_products'}), name='get-list-products'),
@@ -112,6 +112,8 @@ urlpatterns = [
     path("api/product/get-list-products-by-catalog/", views_product.PublicProductViewset.as_view({'get': 'list_products_by_catalog'}), name='get-list-products-by-catalog'),
     path("api/product/get-list-products-by-promotion/", views_product.PublicProductViewset.as_view({'get': 'list_products_by_promotion'}), name='get-list-products-by-promotion'),
     path("api/product/search-products/", views_product.PublicProductViewset.as_view({'get': 'search_products'}), name='search-products'),
+    path("api/product/get-one-product-per-catalog/", views_product.PublicProductViewset.as_view({'get': 'list_one_product_per_catalog'}), name='get-one-product-per-catalog'),
+    
     #--private route
     path("api/product/admin/get-list-products/", views_product.ProductViewSet.as_view({'get': 'list_products'}), name='admin-get-list-products'),
     path("api/product/admin/create-new-product/", views_product.ProductViewSet.as_view({'post': 'create_product'}), name='admin-create-new-product'),

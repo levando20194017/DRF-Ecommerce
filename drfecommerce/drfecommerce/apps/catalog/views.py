@@ -532,9 +532,12 @@ class PublicCatalogViewSetGetData(viewsets.ViewSet):
         page_index = int(request.GET.get('page_index', 1))
         page_size = int(request.GET.get('page_size', 10))
         name_query = request.GET.get('name', '').strip()
+        level = int(request.GET.get('level'))
 
         # Lọc sản phẩm theo tên
         catalogs = Catalog.objects.filter(name__icontains=name_query, delete_at__isnull=True)
+        if level:
+            catalogs = Catalog.objects.filter(level=level, delete_at__isnull=True)
 
         paginator = Paginator(catalogs, page_size)
 
