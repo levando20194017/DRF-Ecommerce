@@ -363,11 +363,13 @@ class PublicBlogViewSet(viewsets.ViewSet):
         - page_size (default=10)
         - name: blog name to search
         - tag: tag to search for
+        - order_by_field: 'views' or 'updated_at' (default='updated_at')
         """
         page_index = int(request.GET.get('page_index', 1))
         page_size = int(request.GET.get('page_size', 10))
         name_query = request.GET.get('name', '').strip()
         tag_query = request.GET.get('tag', '').strip()
+        order_by_field = request.GET.get('order_by', 'updated_at').strip()  # Default to 'updated_at'
 
         # Start with all blogs
         blogs = Blog.objects.filter(delete_at__isnull = True)
@@ -380,6 +382,12 @@ class PublicBlogViewSet(viewsets.ViewSet):
         if tag_query:
             blogs = blogs.filter(blogtag__tag__name__icontains=tag_query).distinct()
 
+          # Order by specified field
+        if order_by_field == 'views':
+            blogs = blogs.order_by('-views')  # Sắp xếp giảm dần theo views
+        else:
+            blogs = blogs.order_by('-updated_at')  # Sắp xếp giảm dần theo ngày cập nhật (mặc định)
+        
         paginator = Paginator(blogs, page_size)
 
         try:
@@ -434,6 +442,9 @@ class PublicBlogViewSet(viewsets.ViewSet):
             response_data = serializer.data
             response_data['tags'] = tags
             response_data['tag_names'] = tag_names_str
+            
+            blog.views += 1
+            blog.save(update_fields=['views'])
 
             return Response({
                 "status": status.HTTP_200_OK,

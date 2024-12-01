@@ -12,6 +12,7 @@ class Blog(models.Model):
     short_description = models.TextField()
     content = models.TextField()
     image =  models.CharField(default= '', max_length=255, null=True, blank=True)
+    views = models.IntegerField(default=0)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     delete_at = models.DateTimeField(null=True, blank=True, default=None)
