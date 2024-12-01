@@ -97,8 +97,8 @@ class OrderViewSet(viewsets.ViewSet):
                 return Response({"message": "Quantity must be greater than zero.", "status": 400})
             
             unit_price = product.price
-            if product.promotion_id:
-                promotion = get_object_or_404(Promotion, id=product.promotion_id)
+            if product.promotion:
+                promotion = get_object_or_404(Promotion, id=product.promotion)
                 
                 today = timezone.now().date()  # Lấy ngày hiện tại
                 
