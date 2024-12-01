@@ -7,7 +7,7 @@ from django.core.paginator import EmptyPage
 from django.core.paginator import PageNotAnInteger
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from drfecommerce.apps.my_admin.authentication import AdminSafeJWTAuthentication
-from rest_framework.decorators import action, permission_classes
+from rest_framework.decorators import action, permission_classes, authentication_classes
 from dotenv import load_dotenv
 from django.utils import timezone
 
@@ -27,19 +27,31 @@ class PromotionViewSet(viewsets.ViewSet):
         - code: string
         - from_date: date form yyyy-mm-dd
         - to_date: date form yyyy-mm-dd
-        - special_price: float
-        - member_price: float
-        - rate: float
+        - discount_value: float
+        - discount_type: string
         """
         name = request.data.get('name')
         description = request.data.get('description')
         code = request.data.get('code')
         from_date = request.data.get('from_date')
         to_date = request.data.get('to_date')
-        special_price = request.data.get('special_price')
-        member_price = request.data.get('member_price')
-        rate = request.data.get('rate')
+        discount_value = request.data.get('discount_value')
+        discount_type = request.data.get('discount_type')
+        status_promotion = request.data.get('status')
+        
+        # Kiểm tra xem `name` đã tồn tại hay chưa
+        if Promotion.objects.filter(name=name).exists():
+            return Response({
+                "status": status.HTTP_400_BAD_REQUEST,
+                "message": "Promotion name already exists."
+            })
 
+        # Kiểm tra xem `code` đã tồn tại hay chưa
+        if Promotion.objects.filter(code=code).exists():
+            return Response({
+                "status": status.HTTP_400_BAD_REQUEST,
+                "message": "Promotion code already exists."
+            })
         try:
             promotion = Promotion.objects.create(
                 name=name,
@@ -47,9 +59,9 @@ class PromotionViewSet(viewsets.ViewSet):
                 code=code,
                 from_date=from_date,
                 to_date=to_date,
-                special_price=special_price,
-                member_price=member_price,
-                rate=rate
+                discount_value = discount_value,
+                discount_type = discount_type,
+                status = status_promotion
             )
             promotion.save()
             return Response({
@@ -64,7 +76,7 @@ class PromotionViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
                 "message": str(e)
-            }, status=status.HTTP_400_BAD_REQUEST)
+            })
 
     @action(detail=False, methods=['put'], url_path="edit-promotion")
     def edit_promotion(self, request):
@@ -75,9 +87,8 @@ class PromotionViewSet(viewsets.ViewSet):
         - code: string
         - from_date
         - to_date
-        - special_price: float
-        - member_price: float
-        - rate: float
+        - discount_value: float
+        - discount_type: string
         """
         promotion_id = request.data.get('id')
         name = request.data.get('name')
@@ -85,9 +96,23 @@ class PromotionViewSet(viewsets.ViewSet):
         code = request.data.get('code')
         from_date = request.data.get('from_date')
         to_date = request.data.get('to_date')
-        special_price = request.data.get('special_price')
-        member_price = request.data.get('member_price')
-        rate = request.data.get('rate')
+        discount_value = request.data.get('discount_value')
+        discount_type = request.data.get('discount_type')
+        status_promotion = request.data.get('status')
+        
+        # Kiểm tra xem `name` đã tồn tại hay chưa
+        if Promotion.objects.filter(name=name).exclude(id=promotion_id).exists():
+            return Response({
+                "status": status.HTTP_400_BAD_REQUEST,
+                "message": "Promotion name already exists."
+            })
+
+        # Kiểm tra xem `code` đã tồn tại hay chưa
+        if Promotion.objects.filter(code=code).exclude(id=promotion_id).exists():
+            return Response({
+                "status": status.HTTP_400_BAD_REQUEST,
+                "message": "Promotion code already exists."
+            })
 
         try:
             promotion = Promotion.objects.get(id=promotion_id)
@@ -101,12 +126,12 @@ class PromotionViewSet(viewsets.ViewSet):
                 promotion.from_date = from_date
             if to_date:
                 promotion.to_date = to_date
-            if special_price:
-                promotion.special_price = special_price
-            if member_price:
-                promotion.member_price = member_price
-            if rate:
-                promotion.rate = rate
+            if discount_value:
+                promotion.discount_value = discount_value
+            if discount_type:
+                promotion.discount_type = discount_type
+            if status_promotion:
+                promotion.status = status_promotion
             promotion.save()
             return Response({
                 "status": status.HTTP_200_OK,
@@ -116,12 +141,12 @@ class PromotionViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Promotion not found."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
         except Exception as e:
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
                 "message": str(e)
-            }, status=status.HTTP_400_BAD_REQUEST)
+            })
 
     @action(detail=False, methods=['delete'], url_path="delete-promotion")
     def delete_promotion(self, request):
@@ -134,7 +159,7 @@ class PromotionViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
                 "message": "Promotion ID is required."
-            }, status=status.HTTP_400_BAD_REQUEST)
+            })
 
         try:
             promotion = Promotion.objects.get(id=promotion_id)
@@ -148,12 +173,12 @@ class PromotionViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Promotion not found."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
         except Exception as e:
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
                 "message": str(e)
-            }, status=status.HTTP_400_BAD_REQUEST)
+            })
 
     @action(detail=False, methods=['put'], url_path="restore-promotion")
     def restore_promotion(self, request):
@@ -167,7 +192,7 @@ class PromotionViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
                 "message": "Promotion ID is required."
-            }, status=status.HTTP_400_BAD_REQUEST)
+            })
 
         try:
             # Tìm catalog bị xóa mềm (tức là có delete_at không null)
@@ -176,7 +201,7 @@ class PromotionViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Promotion not found or already restored."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
 
         # Khôi phục catalog và các catalog con của nó
         promotion.delete_at = None
@@ -190,7 +215,7 @@ class PromotionViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['get'], url_path="get-detail-promotion")
     def get_promotion(self, request):
         """
-        Get promotion details: body data:
+        query_param:
         - id
         """
         promotion_id = request.query_params.get('id')
@@ -198,7 +223,7 @@ class PromotionViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
                 "message": "Promotion ID is required."
-            }, status=status.HTTP_400_BAD_REQUEST)
+            })
 
         try:
             promotion = Promotion.objects.get(id=promotion_id)
@@ -211,7 +236,7 @@ class PromotionViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Promotion not found."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
 
     @action(detail=False, methods=['get'], url_path="get-list-promotions")
     def list_promotions(self, request):
@@ -255,7 +280,7 @@ class PromotionViewSet(viewsets.ViewSet):
         API to search products by name with pagination.
         - page_index (default=1)
         - page_size (default=10)
-        - name: product name to search
+        - name: promotion name to search
         """
         page_index = int(request.GET.get('page_index', 1))
         page_size = int(request.GET.get('page_size', 10))
@@ -286,6 +311,8 @@ class PromotionViewSet(viewsets.ViewSet):
                 "promotions": serializer.data
             }
         }, status=status.HTTP_200_OK)
+
+@authentication_classes([])
 @permission_classes([AllowAny])
 class PublicPromotionViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['get'], url_path="get-list-promotions")
@@ -335,7 +362,7 @@ class PublicPromotionViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
                 "message": "Promotion ID is required."
-            }, status=status.HTTP_400_BAD_REQUEST)
+            })
 
         try:
             promotion = Promotion.objects.get(id=promotion_id, delete_at__isnull = True)
@@ -348,7 +375,7 @@ class PublicPromotionViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Promotion not found."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
             
     @action(detail=False, methods=['get'], url_path="search-promotions")
     def search_promotions(self, request):
@@ -362,7 +389,7 @@ class PublicPromotionViewSet(viewsets.ViewSet):
         page_size = int(request.GET.get('page_size', 10))
         name_query = request.GET.get('name', '').strip()
         
-        promotions = Promotion.objects.all()
+        promotions = Promotion.objects.filter(delete_at__isnull = True)
         if name_query:
             # Lọc sản phẩm theo tên
             promotions = Promotion.objects.filter(name__icontains=name_query, delete_at__isnull = True)

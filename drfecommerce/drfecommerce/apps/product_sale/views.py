@@ -2,15 +2,14 @@ from rest_framework import viewsets, status
 from rest_framework.response import Response
 from .serializers import ProductSaleSerializer, ProductReportSaleSerializer
 from drfecommerce.apps.product_sale.models import ProductSale
-from drfecommerce.apps.product_sale.models import ProductSale
-from rest_framework.permissions import IsAuthenticated
+from drfecommerce.apps.product.models import Product
+from drfecommerce.apps.product.serializers import ProductSerializer
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from drfecommerce.apps.my_admin.authentication import AdminSafeJWTAuthentication
-from rest_framework.decorators import action
-from django.core.paginator import Paginator
-from django.core.paginator import EmptyPage
-from django.core.paginator import PageNotAnInteger
+from rest_framework.decorators import action, permission_classes, authentication_classes
 from django.utils.dateparse import parse_datetime
 from django.db.models import Sum, F
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 class AdminProductSaleViewSet(viewsets.ViewSet):
     authentication_classes = [AdminSafeJWTAuthentication]
@@ -118,21 +117,15 @@ class AdminProductSaleViewSet(viewsets.ViewSet):
             "total_items": store_revenue.count(),
             "data": paginated_data,
         })
-        
+
+@authentication_classes([])            
+@permission_classes([AllowAny])      
+class PublicProductSaleViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['get'], url_path="get-list-sold-products-filter")
     def list_sold_products_filter(self, request):
         """
-        #Thống kê các product đã bán (số lượng)
-        Get the list of sold products with their total quantity sold.
-        Optionally filter by start_date, end_date, and store_id.
-        Pagination is applied to the response.
-
-        Parameters:
-        - page_index: The index of the page (default is 1).
-        - page_size: The number of items per page (default is 10).
-        - start_date: The start date to filter product sales (format: YYYY-MM-DD).
-        - end_date: The end date to filter product sales (format: YYYY-MM-DD).
-        - store_id: The ID of a specific store to filter the sales.
+        Thống kê các sản phẩm đã bán (số lượng)=> sắp xếp theo bán chạy nhất.
+        Nếu không có sản phẩm bán nào, trả về danh sách sản phẩm mặc định từ bảng Product.
         """
         page_index = int(request.GET.get('page_index', 1))
         page_size = int(request.GET.get('page_size', 10))
@@ -140,14 +133,14 @@ class AdminProductSaleViewSet(viewsets.ViewSet):
         end_date = request.GET.get('end_date')
         store_id = request.GET.get('store_id')
 
-        # Start building the query
+        # Lấy danh sách sản phẩm đã bán
         product_sales = ProductSale.objects.all()
 
-        # Filter by store if provided
+        # Lọc theo cửa hàng (nếu có)
         if store_id:
             product_sales = product_sales.filter(store_id=store_id)
 
-        # Filter by date range if provided
+        # Lọc theo ngày (nếu có)
         if start_date and end_date:
             product_sales = product_sales.filter(sale_date__range=[start_date, end_date])
         elif start_date:
@@ -155,33 +148,59 @@ class AdminProductSaleViewSet(viewsets.ViewSet):
         elif end_date:
             product_sales = product_sales.filter(sale_date__lte=end_date)
 
-        # Group by product and calculate the total quantity sold
+        # Gộp theo sản phẩm và tính tổng số lượng đã bán
         product_sales = product_sales.values('product__id', 'product__name').annotate(
             total_quantity_sold=Sum('quantity_sold')
-        )
+        ).order_by('-total_quantity_sold')  # Sắp xếp theo số lượng bán được nhiều nhất
 
-        # Apply pagination
+        # Nếu danh sách sản phẩm đã bán rỗng, lấy danh sách mặc định từ bảng Product
+        if not product_sales.exists():
+            products = Product.objects.all()
+            products = products.order_by('-updated_at')
+            # Áp dụng phân trang cho sản phẩm
+            paginator = Paginator(products, page_size)
+            try:
+                paginated_products = paginator.page(page_index)
+            except PageNotAnInteger:
+                paginated_products = paginator.page(1)
+            except EmptyPage:
+                paginated_products = paginator.page(paginator.num_pages)
+
+            # Serialize danh sách sản phẩm
+            serializer = ProductSerializer(paginated_products, many=True)
+            return Response({
+                "status": status.HTTP_200_OK,
+                "message": "Không có sản phẩm nào được bán, trả về danh sách sản phẩm mặc định.",
+                "data": {
+                    "total_pages": paginator.num_pages,
+                    "total_items": paginator.count,
+                    "page_index": page_index,
+                    "page_size": page_size,
+                    "products": serializer.data
+                }
+            }, status=status.HTTP_200_OK)
+
+        # Áp dụng phân trang cho danh sách sản phẩm đã bán
         paginator = Paginator(product_sales, page_size)
-
         try:
-            paginated_product_sale = paginator.page(page_index)
+            paginated_product_sales = paginator.page(page_index)
         except PageNotAnInteger:
-            paginated_product_sale = paginator.page(1)
+            paginated_product_sales = paginator.page(1)
         except EmptyPage:
-            paginated_product_sale = paginator.page(paginator.num_pages)
+            paginated_product_sales = paginator.page(paginator.num_pages)
 
-        # Serialize the paginated data
-        serializer = ProductReportSaleSerializer(paginated_product_sale, many=True)
+        # Serialize dữ liệu sản phẩm đã bán
+        serializer = ProductReportSaleSerializer(paginated_product_sales, many=True)
 
         return Response({
             "status": status.HTTP_200_OK,
-            "message": "OK",
+            "message": "Thành công",
             "data": {
                 "total_pages": paginator.num_pages,
                 "total_items": paginator.count,
                 "page_index": page_index,
                 "page_size": page_size,
-                "product_sale": serializer.data
+                "product_sales": serializer.data
             }
         }, status=status.HTTP_200_OK)
 

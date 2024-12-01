@@ -9,7 +9,7 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from drfecommerce.apps.my_admin.authentication import AdminSafeJWTAuthentication
-from rest_framework.decorators import action, permission_classes
+from rest_framework.decorators import action, permission_classes, authentication_classes
 import os
 from dotenv import load_dotenv
 from django.utils import timezone
@@ -36,12 +36,17 @@ class CatalogViewSetGetData(viewsets.ViewSet):
         Parameters:
         - page_index: The index of the page (default is 1).
         - page_size: The number of items per page (default is 10).
+        - textSearch: searh by name
         """
         page_index = int(request.GET.get('page_index', 1))
         page_size = int(request.GET.get('page_size', 10))
+        search_term = request.GET.get('textSearch', '')
 
         # Lấy toàn bộ danh sách catalog
         catalogs = Catalog.objects.all()
+        
+        if search_term:
+            catalogs = catalogs.filter(name__icontains=search_term)
 
         # Chia trang
         paginator = Paginator(catalogs, page_size)
@@ -59,6 +64,7 @@ class CatalogViewSetGetData(viewsets.ViewSet):
             "status": 200,
             "message": "OK",
             "data": {
+                "total_items": paginator.count,
                 "total_pages": paginator.num_pages,
                 "data": data
             }
@@ -151,7 +157,7 @@ class CatalogViewSetGetData(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
                 "message": "Catalog ID is required."
-            }, status=status.HTTP_400_BAD_REQUEST)
+            })
 
         try:
             catalog = Catalog.objects.get(id=catalog_id)
@@ -164,7 +170,7 @@ class CatalogViewSetGetData(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Catalog not found."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
             
 class CatalogViewSetCreateData(viewsets.ViewSet):
     serializer_class = serializerCreateCatalog
@@ -201,7 +207,7 @@ class CatalogViewSetCreateData(viewsets.ViewSet):
                 duplicates = [catalog.name for catalog in list_catalog_children if catalog.name == name]
                 if duplicates:
                     return Response({
-                            'status': 201,
+                            'status': 400,
                             'message': "Catalog at this level already exists"
                             })
             else:
@@ -213,7 +219,7 @@ class CatalogViewSetCreateData(viewsets.ViewSet):
                 duplicates = [catalog.name for catalog in list_catalog_children if catalog.name == name]
                 if duplicates:
                     return Response({
-                            'status': 201,
+                            'status': 400,
                             'message': "Catalog at this level already exists"
                             })
                     
@@ -233,7 +239,7 @@ class CatalogViewSetCreateData(viewsets.ViewSet):
             return Response({
                 "status": 404,
                 "message": "Catalog parent not found."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
         
 class CatalogViewSetDeleteData(viewsets.ViewSet):
     authentication_classes = [AdminSafeJWTAuthentication]
@@ -250,7 +256,7 @@ class CatalogViewSetDeleteData(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
                 "message": "Catalog ID is required."
-            }, status=status.HTTP_400_BAD_REQUEST)
+            })
 
         try:
             catalog = Catalog.objects.get(id=catalog_id, delete_at__isnull=True)
@@ -258,7 +264,7 @@ class CatalogViewSetDeleteData(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Catalog not found or already deleted."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
 
         # Perform soft delete on the catalog and its child catalogs
         self.soft_delete_catalog_and_children(catalog)
@@ -299,8 +305,7 @@ class CatalogViewSetRestoreData(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
                 "message": "Catalog ID is required."
-            }, status=status.HTTP_400_BAD_REQUEST)
-
+            })
         try:
             # Tìm catalog bị xóa mềm (tức là có delete_at không null)
             catalog = Catalog.objects.get(id=catalog_id, delete_at__isnull=False)
@@ -308,7 +313,7 @@ class CatalogViewSetRestoreData(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Catalog not found or already restored."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
 
         # Khôi phục catalog và các catalog con của nó
         self.restore_catalog_and_children(catalog)
@@ -355,7 +360,7 @@ class CatalogViewSetEditData(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
                 "message": "Catalog ID is required."
-            }, status=status.HTTP_400_BAD_REQUEST)
+            })
 
         try:
             catalog = Catalog.objects.get(id=catalog_id)
@@ -363,7 +368,7 @@ class CatalogViewSetEditData(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Catalog does not exist."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
 
         # Chỉ cập nhật nếu trường đó được gửi lên từ request
         if name:
@@ -396,14 +401,14 @@ class CatalogViewSetEditData(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
                 "message": "Catalog ID is required."
-            }, status=status.HTTP_400_BAD_REQUEST)
+            })
         try:
             catalog = Catalog.objects.get(id = catalog_id)
         except Catalog.DoesNotExist:
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Catalog not found or already deleted."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
         
         if img_name:
             # Lưu file ảnh vào đường dẫn cục bộ
@@ -426,7 +431,8 @@ class CatalogViewSetEditData(viewsets.ViewSet):
                 "status": 404,
                 "message": "file_name is required"
             }, status=status.HTTP_200_OK)
-            
+
+@authentication_classes([])            
 @permission_classes([AllowAny])         
 class PublicCatalogViewSetGetData(viewsets.ViewSet):
     queryset = Catalog.objects.all()
@@ -444,12 +450,16 @@ class PublicCatalogViewSetGetData(viewsets.ViewSet):
         Parameters:
         - page_index: The index of the page (default is 1).
         - page_size: The number of items per page (default is 10).
+        - textSearch: Search by name
         """
         page_index = int(request.GET.get('page_index', 1))
         page_size = int(request.GET.get('page_size', 10))
+        search_term = request.GET.get('textSearch', '')
 
         # Lấy toàn bộ danh sách catalog
         catalogs = Catalog.objects.filter(delete_at__isnull = True)
+        if search_term:
+            catalogs = catalogs.filter(name__icontains=search_term)
 
         # Chia trang
         paginator = Paginator(catalogs, page_size)
@@ -467,6 +477,7 @@ class PublicCatalogViewSetGetData(viewsets.ViewSet):
             "status": 200,
             "message": "OK",
             "data": {
+                "total_items": paginator.count,
                 "total_pages": paginator.num_pages,
                 "data": data
             }
@@ -521,9 +532,12 @@ class PublicCatalogViewSetGetData(viewsets.ViewSet):
         page_index = int(request.GET.get('page_index', 1))
         page_size = int(request.GET.get('page_size', 10))
         name_query = request.GET.get('name', '').strip()
+        level = int(request.GET.get('level'))
 
         # Lọc sản phẩm theo tên
         catalogs = Catalog.objects.filter(name__icontains=name_query, delete_at__isnull=True)
+        if level:
+            catalogs = Catalog.objects.filter(level=level, delete_at__isnull=True)
 
         paginator = Paginator(catalogs, page_size)
 

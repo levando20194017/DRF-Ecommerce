@@ -14,7 +14,7 @@ from django.core.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from drfecommerce.apps.my_admin.authentication import AdminSafeJWTAuthentication
 from rest_framework.permissions import AllowAny
-from rest_framework.decorators import action, permission_classes
+from rest_framework.decorators import action, permission_classes, authentication_classes
 from drfecommerce.apps.my_admin.utils import generate_access_token, generate_refresh_token
 from rest_framework import exceptions
 import os
@@ -158,7 +158,7 @@ class AdminViewSetGetData(viewsets.ViewSet):
                 "status": 400,
                 "message": "Invalid ID format."
             }, status=400)
-
+@authentication_classes([])
 @permission_classes([AllowAny])
 class AdminViewSetLogin(viewsets.ViewSet):
     """
@@ -193,8 +193,9 @@ class AdminViewSetLogin(viewsets.ViewSet):
             return Response({
                 "status": 404,
                 "message": "Invalid email or password"
-            }, status=404)
-            
+            })
+
+@authentication_classes([])            
 @permission_classes([AllowAny])
 class RefreshTokenView(viewsets.ViewSet):
     serializer_class = AdminRefreshTokenSerializer
@@ -240,7 +241,7 @@ class AdminViewsetUploadImage(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
                 "message": "No image file found in request."
-            }, status=status.HTTP_400_BAD_REQUEST)
+            })
 
         image = request.FILES['file']
         img_name = image.name

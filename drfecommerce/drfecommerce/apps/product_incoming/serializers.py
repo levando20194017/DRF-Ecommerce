@@ -5,6 +5,7 @@ from .models import ProductIncoming
 class ProductIncomingSerializer(serializers.ModelSerializer):
     store_name = serializers.CharField(source='store.name', read_only=True)
     product_name = serializers.CharField(source='product.name', read_only=True)
+    product_image = serializers.CharField(source='product.image', read_only=True)
     class Meta:
         model = ProductIncoming
         fields = '__all__'
@@ -15,6 +16,7 @@ class ProductIncomingDetailSerializer(serializers.ModelSerializer):
     store_email = serializers.CharField(source='store.email', read_only=True)
     store_address = serializers.CharField(source='store.address', read_only=True)
     product_name = serializers.CharField(source='product.name', read_only=True)
+    product_image = serializers.CharField(source='product.image', read_only=True)
     class Meta:
         model = ProductIncoming
         fields = '__all__'

@@ -13,6 +13,7 @@ from drfecommerce.apps.product import views as views_product
 from drfecommerce.apps.cart import views as views_cart
 from drfecommerce.apps.store import views as views_store
 from drfecommerce.apps.order import views as views_order
+from drfecommerce.apps.transaction import views as views_transaction
 from drfecommerce.apps.review import views as views_review
 from drfecommerce.apps.order_detail import views as views_order_detail
 from drfecommerce.apps.product_incoming import views as views_product_incoming
@@ -97,11 +98,13 @@ urlpatterns = [
     #---private
     path("api/blog/admin/create-new-blog/", views_blog.BlogViewSet.as_view({'post': 'create_blog'}), name='admin-create-new-blog'),
     path("api/blog/admin/delete-blog/", views_blog.BlogViewSet.as_view({'delete': 'delete_blog'}), name='admin-delete-blog'),
+    path("api/blog/admin/restore-blog/", views_blog.BlogViewSet.as_view({'put': 'restore_blog'}), name='admin-restore-blog'),
     path("api/blog/admin/update-blog/", views_blog.BlogViewSet.as_view({'put': 'update_blog'}), name='admin-edit-blog'),
     path("api/blog/admin/get-detail-blog/", views_blog.BlogViewSet.as_view({'get': 'get_blog'}), name='admin-get-detail-blog'),
+    path("api/blog/admin/search-blogs/", views_blog.BlogViewSet.as_view({'get': 'search_blogs'}), name='admin-search-blogs'),
     #--public
     path("api/blog/search-blogs/", views_blog.PublicBlogViewSet.as_view({'get': 'search_blogs'}), name='search-blogs'),
-    
+    path("api/blog/get-detail-blog/", views_blog.PublicBlogViewSet.as_view({'get': 'get_blog'}), name='get-detail-blog'),
     #product
     #--public route
     path("api/product/get-list-products/", views_product.PublicProductViewset.as_view({'get': 'list_products'}), name='get-list-products'),
@@ -109,6 +112,8 @@ urlpatterns = [
     path("api/product/get-list-products-by-catalog/", views_product.PublicProductViewset.as_view({'get': 'list_products_by_catalog'}), name='get-list-products-by-catalog'),
     path("api/product/get-list-products-by-promotion/", views_product.PublicProductViewset.as_view({'get': 'list_products_by_promotion'}), name='get-list-products-by-promotion'),
     path("api/product/search-products/", views_product.PublicProductViewset.as_view({'get': 'search_products'}), name='search-products'),
+    path("api/product/get-one-product-per-catalog/", views_product.PublicProductViewset.as_view({'get': 'list_one_product_per_catalog'}), name='get-one-product-per-catalog'),
+    
     #--private route
     path("api/product/admin/get-list-products/", views_product.ProductViewSet.as_view({'get': 'list_products'}), name='admin-get-list-products'),
     path("api/product/admin/create-new-product/", views_product.ProductViewSet.as_view({'post': 'create_product'}), name='admin-create-new-product'),
@@ -121,6 +126,7 @@ urlpatterns = [
     #product_incoming (liên quan đến sản phẩm nhập vào)
     path("api/product_incoming/admin/list-product-incomings/", views_product_incoming.ProductIncomingViewSet.as_view({'get': 'list_product_incomings'}), name='admin-get-list-product-incomings'),
     path("api/product_incoming/admin/create-product-incoming/", views_product_incoming.ProductIncomingViewSet.as_view({'post': 'add_product_incoming'}), name='admin-create-new-product-incoming'),
+    path("api/product_incoming/admin/edit-product-incoming/", views_product_incoming.ProductIncomingViewSet.as_view({'put': 'edit_product_incoming'}), name='admin-edit-new-product-incoming'),
     path("api/product_incoming/admin/delete-product-incoming/", views_product_incoming.ProductIncomingViewSet.as_view({'delete': 'delete_product_incoming'}), name='admin-delete-product-incoming'),
     path("api/product_incoming/admin/detail-product-incoming/", views_product_incoming.ProductIncomingViewSet.as_view({'get': 'detail_product_incoming'}), name='admin-get-detail-product-incomings'),
     path("api/product_incoming/admin/search_product_incomings/", views_product_incoming.ProductIncomingViewSet.as_view({'get': 'search_product_incomings'}), name='admin-search-product-incomings'),
@@ -131,7 +137,7 @@ urlpatterns = [
     path("api/product_sale/admin/get-all-products-sale/", views_product_sale.AdminProductSaleViewSet.as_view({'get': 'get_all_products_sale'}), name='admin-get-all-products-sale'),
     path("api/product_sale/admin/get-total-report/", views_product_sale.AdminProductSaleViewSet.as_view({'get': 'get_total_report'}), name='get-total-report'),
     #thống kê sản phẩm đã bán (số lượng đã bán trên mỗi sản phẩm)
-    path("api/product_sale/admin/get-list-sold-products-filter/", views_product_sale.AdminProductSaleViewSet.as_view({'get': 'list_sold_products_filter'}), name='admin-get-list-sold-product-filter'),
+    path("api/product_sale/admin/get-list-sold-products-filter/", views_product_sale.PublicProductSaleViewSet.as_view({'get': 'list_sold_products_filter'}), name='admin-get-list-sold-product-filter'),
     
     #store
     #--private route
@@ -164,7 +170,12 @@ urlpatterns = [
     path("api/order/admin/update-payment-status/", views_order.AdminOrderViewSet.as_view({'put': 'update_payment_status'}), name='admin-update-payment-status'),
     
     path("api/payment_return/", views_order.vnpay_return),
-    path(r'^payment_return$', views_order.index, name='index'),
+    path('payment_return', views_order.index, name='index'),
+    
+    #transaction
+    path("api/transaction/admin/get-list-transactions/", views_transaction.TransactionViewSet.as_view({'get': 'search_transactions'}), name='admin-get-list-transactions'),
+    path("api/transaction/admin/get-detail-transaction/", views_transaction.TransactionViewSet.as_view({'get': 'get_transaction'}), name='admin-get-detail-transaction'),
+          
     #rating
     path("api/review/guest-review/", views_review.ReviewViewSet.as_view({'post': 'guest_review'}), name='guest-review'),
     path("api/review/admin-reply-review/", views_review.AdminReviewViewset.as_view({'post': 'admin_reply_review'}), name='admin-reply-review'),

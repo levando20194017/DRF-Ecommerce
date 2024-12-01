@@ -27,7 +27,7 @@ class CartViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
                 "message": "Promotion ID is required."
-            }, status=status.HTTP_400_BAD_REQUEST)
+            })
             
         try: 
             guest = Guest.objects.get(id = guest_id)
@@ -35,7 +35,7 @@ class CartViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Guest not found."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
         
         cart = Cart.objects.create(guest=guest)
         cart.save()
@@ -58,7 +58,7 @@ class CartViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
                 "message": "Guest ID is required."
-            }, status=status.HTTP_400_BAD_REQUEST)
+            })
             
         try: 
             guest = Guest.objects.get(id = guest_id)
@@ -66,7 +66,7 @@ class CartViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Guest not found."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
         cart, created = Cart.objects.get_or_create(guest=guest)
 
         serializer = CartSerializer(cart)
@@ -97,7 +97,7 @@ class CartViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Guest not found."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
             
         try:
             product = Product.objects.get(id=product_id)
@@ -105,7 +105,7 @@ class CartViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Product not found."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
             
         try:
             store = Store.objects.get(id=store_id)
@@ -113,7 +113,7 @@ class CartViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Store not found."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
             
         # Kiểm tra nếu giỏ hàng đã tồn tại, nếu không sẽ tạo giỏ hàng mới
         cart, created = Cart.objects.get_or_create(guest=guest)
@@ -155,7 +155,7 @@ class CartViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Guest not found."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
             
         cart = Cart.objects.get(guest=guest)
         
@@ -166,7 +166,7 @@ class CartViewSet(viewsets.ViewSet):
                 return Response({
                     "status": status.HTTP_204_NO_CONTENT,
                     "message": "Cart item removed successfully."
-                }, status=status.HTTP_204_NO_CONTENT)
+                })
             cart_item.quantity = quantity
             cart_item.save()
             return Response({
@@ -178,7 +178,7 @@ class CartViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Cart item not found."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
 
     @action(detail=False, methods=['post'], url_path='remove-cart-item')
     def remove_cart_item(self, request):
@@ -198,7 +198,7 @@ class CartViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Guest not found."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
             
         cart = Cart.objects.get(guest=guest)
         
@@ -208,12 +208,12 @@ class CartViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_204_NO_CONTENT,
                 "message": "Cart item removed successfully."
-            }, status=status.HTTP_204_NO_CONTENT)
+            })
         except CartItem.DoesNotExist:
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Cart item not found."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
 
     # @action(detail=False, methods=['get'], url_path='get-cart-items')
     # def get_cart_items(self, request):
@@ -230,7 +230,7 @@ class CartViewSet(viewsets.ViewSet):
     #         return Response({
     #             "status": status.HTTP_400_BAD_REQUEST,
     #             "message": "Guest ID is required."
-    #         }, status=status.HTTP_400_BAD_REQUEST)
+    #         })
             
     #     try:
     #         cart = Cart.objects.get(guest_id = guest_id)
@@ -238,7 +238,7 @@ class CartViewSet(viewsets.ViewSet):
     #         return Response({
     #             "status": status.HTTP_404_NOT_FOUND,
     #             "message": "Cart not found."
-    #         }, status=status.HTTP_404_NOT_FOUND)
+    #         })
 
     #     # Pagination settings
     #     page_index = int(request.GET.get('page_index', 1))

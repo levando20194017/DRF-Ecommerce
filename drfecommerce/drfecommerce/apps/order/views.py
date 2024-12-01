@@ -4,6 +4,7 @@ from django.core.mail import send_mail
 from .models import Order
 from .serializers import OrderSerializer
 from drfecommerce.apps.order_detail.models import OrderDetail
+from drfecommerce.apps.promotion.models import Promotion
 from drfecommerce.apps.product.models import Product
 from drfecommerce.apps.cart.models import Cart, CartItem
 from drfecommerce.apps.product_store.models import ProductStore
@@ -68,13 +69,13 @@ class OrderViewSet(viewsets.ViewSet):
                 # Chuyển đổi chuỗi JSON thành danh sách
                 order_details = json.loads(order_details_str)
             except json.JSONDecodeError:
-                return Response({"message": "Invalid JSON format for order details."}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"message": "Invalid JSON format for order details."})
         elif isinstance(order_details_str, list):
             order_details = order_details_str  # Nếu đã là list thì dùng trực tiếp
         else:
-            return Response({"message": "Invalid data type for order details."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message": "Invalid data type for order details."})
         if not order_details:
-            return Response({"message": "Order details are required."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message": "Order details are required."})
 
         total_cost = 0
         
@@ -87,11 +88,29 @@ class OrderViewSet(viewsets.ViewSet):
             # Kiểm tra số lượng tồn kho
             product_store = get_object_or_404(ProductStore, product=product, store=store)
             if product_store.remaining_stock < quantity:
-                return Response({"message": f"Not enough stock for {product.name}. Available: {product_store.remaining_stock}"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"message": f"Not enough stock for {product.name}. Available: {product_store.remaining_stock}",
+                                 "status": 400
+                                 })
 
             if quantity <= 0:
-                return Response({"message": "Quantity must be greater than zero."}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"message": "Quantity must be greater than zero.", "status": 400})
+            
+            unit_price = product.price
+            if product.promotion_id:
+                promotion = get_object_or_404(Promotion, id=product.promotion_id)
+                
+                today = timezone.now().date()  # Lấy ngày hiện tại
+                
+                # Kiểm tra trạng thái và thời gian hiệu lực của khuyến mãi
+                if promotion.status == "active" and promotion.from_date <= today <= promotion.to_date:
+                    if promotion.discount_type == "percentage":
+                        unit_price *= (1 - promotion.discount_value / 100)
+                    elif promotion.discount_type == "fixed":
+                        unit_price -= promotion.discount_value
+                    unit_price = max(unit_price, 0)  # Đảm bảo giá không âm
 
+            total_cost += unit_price * quantity
+        
             product = get_object_or_404(Product, id=int(detail['product_id']))
             unit_price = product.price
             total_cost += unit_price * quantity
@@ -143,7 +162,7 @@ class OrderViewSet(viewsets.ViewSet):
             try:
                 guest = Guest.objects.get(id=guest_id)  # Lấy đối tượng guest
             except Guest.DoesNotExist:
-                return Response({'Guest': 'Order not found.', "status":status.HTTP_404_NOT_FOUND}, status=status.HTTP_404_NOT_FOUND)
+                return Response({'Guest': 'Order not found.', "status":status.HTTP_404_NOT_FOUND})
             
             create_notification(
                 guest=guest,  # Gửi đối tượng guest
@@ -160,7 +179,7 @@ class OrderViewSet(viewsets.ViewSet):
                 self.send_order_email_to_admin(order)
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors)
     
     def redirect_to_payment_gateway(self, request, order, *args, **kwargs):
         order_id = order.id
@@ -258,7 +277,7 @@ class OrderViewSet(viewsets.ViewSet):
     #                 payment_url = link['href']
     #                 return Response({'redirect_url': payment_url, 'amount': order.total_cost}, status=status.HTTP_302_FOUND)
     #     else:
-    #         return Response({'error': 'Payment failed'}, status=status.HTTP_400_BAD_REQUEST)
+    #         return Response({'error': 'Payment failed'})
         
     # def payment_callback(self, request, *args, **kwargs):
     #     # Nhận thông tin từ cổng thanh toán (giả sử cổng thanh toán gọi callback tới endpoint này)
@@ -282,9 +301,9 @@ class OrderViewSet(viewsets.ViewSet):
 
     #             return Response({'message': 'Payment successful and order confirmed.', "status":status.HTTP_200_OK}, status=status.HTTP_200_OK)
     #         else:
-    #             return Response({'error': 'Payment amount mismatch or payment failed.', "status":status.HTTP_400_BAD_REQUEST}, status=status.HTTP_400_BAD_REQUEST)
+    #             return Response({'error': 'Payment amount mismatch or payment failed.', "status":status.HTTP_400_BAD_REQUEST})
     #     except Order.DoesNotExist:
-    #         return Response({'error': 'Order not found.', "status":status.HTTP_404_NOT_FOUND}, status=status.HTTP_404_NOT_FOUND)
+    #         return Response({'error': 'Order not found.', "status":status.HTTP_404_NOT_FOUND})
 
     def send_order_email_to_admin(self, order, *args, **kwargs):
         # Gửi email với thông tin order cho admin
@@ -404,7 +423,7 @@ class OrderViewSet(viewsets.ViewSet):
                     status=status.HTTP_400_BAD_REQUEST
                 )
         except Order.DoesNotExist:
-            return Response({'error': 'Order not found.'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'error': 'Order not found.'})
 
     def send_order_cancellation_email(self, order):
         # Define email subject
@@ -451,7 +470,7 @@ class OrderViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
                 "message": "Guest ID is required."
-            }, status=status.HTTP_400_BAD_REQUEST)
+            })
 
         try:
             guest = Guest.objects.get(id=guest_id)
@@ -459,7 +478,7 @@ class OrderViewSet(viewsets.ViewSet):
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Guest not found."
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
 
         # Start building the query
         orders = Order.objects.filter(guest=guest)
@@ -475,7 +494,7 @@ class OrderViewSet(viewsets.ViewSet):
                     return Response({
                         "status": status.HTTP_400_BAD_REQUEST,
                         "message": "Invalid start date format. Please use YYYY-MM-DD."
-                    }, status=status.HTTP_400_BAD_REQUEST)
+                    })
 
             if end_date:
                 try:
@@ -486,7 +505,7 @@ class OrderViewSet(viewsets.ViewSet):
                     return Response({
                         "status": status.HTTP_400_BAD_REQUEST,
                         "message": "Invalid end date format. Please use YYYY-MM-DD."
-                    }, status=status.HTTP_400_BAD_REQUEST)
+                    })
 
         paginator = Paginator(orders, page_size)
 
@@ -552,7 +571,7 @@ class AdminOrderViewSet(viewsets.ViewSet):
                     return Response({
                         "status": status.HTTP_400_BAD_REQUEST,
                         "message": "Invalid start date format. Please use YYYY-MM-DD."
-                    }, status=status.HTTP_400_BAD_REQUEST)
+                    })
 
             if end_date:
                 try:
@@ -563,7 +582,7 @@ class AdminOrderViewSet(viewsets.ViewSet):
                     return Response({
                         "status": status.HTTP_400_BAD_REQUEST,
                         "message": "Invalid end date format. Please use YYYY-MM-DD."
-                    }, status=status.HTTP_400_BAD_REQUEST)        
+                    })        
          # Apply filters for order status, payment method, and payment status
         if order_status:
             orders = orders.filter(order_status=order_status)
@@ -617,13 +636,13 @@ class AdminOrderViewSet(viewsets.ViewSet):
         if new_status not in ['confirmed', 'shipped', 'delivered', 'cancelled', 'returned']:
             return Response({
                 "status":status.HTTP_400_BAD_REQUEST,
-                "message": "Invalid order status."}, status=status.HTTP_400_BAD_REQUEST)
+                "message": "Invalid order status."})
 
         # Fetch the order
         try:
             order = Order.objects.get(id=order_id)
         except Order.DoesNotExist:
-            return Response({"message": "Order not found.", "status":status.HTTP_404_NOT_FOUND}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"message": "Order not found.", "status":status.HTTP_404_NOT_FOUND})
 
         # Handle status-specific actions
         if new_status == 'confirmed':
@@ -634,7 +653,7 @@ class AdminOrderViewSet(viewsets.ViewSet):
                     return Response({
                         "status": status.HTTP_400_BAD_REQUEST,
                         "message": f"Not enough stock for product {detail.product.name}."
-                        }, status=status.HTTP_400_BAD_REQUEST)
+                        })
                 product_store.remaining_stock -= detail.quantity
                 product_store.save()
 
@@ -735,13 +754,13 @@ class AdminOrderViewSet(viewsets.ViewSet):
         if new_status not in ['paid', 'unpaid']:
             return Response({
                 "status":status.HTTP_400_BAD_REQUEST,
-                "message": "Invalid order status."}, status=status.HTTP_400_BAD_REQUEST)
+                "message": "Invalid order status."})
 
         # Fetch the order
         try:
             order = Order.objects.get(id=order_id)
         except Order.DoesNotExist:
-            return Response({"message": "Order not found.", "status":status.HTTP_404_NOT_FOUND}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"message": "Order not found.", "status":status.HTTP_404_NOT_FOUND})
         
         # Update the order status
         order.payment_status = new_status

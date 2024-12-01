@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     "mptt",
     "rest_framework_simplejwt",
     "drf_yasg",
+    "corsheaders",
     
     # Internal Apps
     # "drfecommerce.product",
@@ -60,6 +61,8 @@ CORS_ALLOW_CREDENTIALS = True # to accept cookies via ajax request
 CORS_ORIGIN_WHITELIST = [
     '*' # the domain for front-end app(you can add more than 1) 
 ]
+CORS_ALLOWED_ORIGINS = ['http://localhost:3000', 'http://localhost:3001']
+CORS_ALLOW_METHODS = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
 
 # Đường dẫn cục bộ cho việc lưu trữ ảnh
 ECOMMERCE_IMAGES_DIR = os.path.join(BASE_DIR, 'C:/Users/Mine/Documents/document/PROJECT/DATN/Ecommerce_Images')
@@ -86,6 +89,7 @@ MEDIA_URL = '/media/'  # Nếu bạn cần phục vụ ảnh từ URL
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "corsheaders.middleware.CorsMiddleware", 
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -219,6 +223,6 @@ VNPAY_RETURN_URL = "https://feasible-mutually-mullet.ngrok-free.app/api/payment_
 #config tạo đường dẫn BE online
 # https://dashboard.ngrok.com/get-started/your-authtoken
 #ngrok config add-authtoken 2o0D17DHeTslffmWBYUQV9sdsSt_5Kbv5JB1eNhqY8525FUYx
-#ngrok http -subdomain=feasible-mutually-mullet http://127.0.0.1:8000/   build link web qua ngrock
+#ngrok http --url=feasible-mutually-mullet.ngrok-free.app 8000   build link web qua ngrock
 # https://feasible-mutually-mullet.ngrok-free.app/api/schema/docs   địa chỉ link web backend khi build qua ngrok
 #https://sandbox.vnpayment.vn/vnpaygw-sit-testing/order/tested   hệ thống quản lí giao dịch
