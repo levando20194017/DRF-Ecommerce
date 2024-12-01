@@ -268,7 +268,7 @@ class PublicProductStoreViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'], url_path='detail-of-product-and-store')
     def detail_product_store(self, request):
         """
-        API lấy danh sách cửa hàng mà tại đó có bán sản phẩm => áp dụng phía người dùng
+        API lấy thông tin sản phẩm ở trong cửa hàng
         query_params:
         - product_id: ID của product để lọc
         - store_id: ID của store

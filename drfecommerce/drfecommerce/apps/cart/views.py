@@ -53,7 +53,8 @@ class CartViewSet(viewsets.ViewSet):
         """
         Get all items in the user's cart.
         """        
-        guest_id = request.data.get('id')
+        guest_id = request.query_params.get('id')
+        print(guest_id)
         if not guest_id:
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
