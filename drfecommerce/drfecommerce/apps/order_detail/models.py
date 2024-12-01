@@ -13,6 +13,7 @@ class OrderDetail(models.Model):
     product_name = models.CharField(max_length=255)
     quantity = models.IntegerField()
     unit_price = models.FloatField()
+    color = models.CharField(default= '', max_length= 50, null=True, blank=True) #màu sắc của sản phẩm
     location_pickup = models.CharField(max_length=255)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)

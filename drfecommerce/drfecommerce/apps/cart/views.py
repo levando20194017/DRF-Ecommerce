@@ -86,11 +86,13 @@ class CartViewSet(viewsets.ViewSet):
         - store_id: id of store
         - product_id: int
         - quantity: int (optional, default=1)
+        - color: string
         """
         product_id = request.data.get('product_id')
         quantity = request.data.get('quantity', 1)
         guest_id = request.data.get('id')
         store_id = request.data.get('store_id')
+        color = request.data.get('color')
         
         try: 
             guest = Guest.objects.get(id = guest_id)
@@ -119,7 +121,7 @@ class CartViewSet(viewsets.ViewSet):
         # Kiểm tra nếu giỏ hàng đã tồn tại, nếu không sẽ tạo giỏ hàng mới
         cart, created = Cart.objects.get_or_create(guest=guest)
         # Kiểm tra nếu sản phẩm đã có trong giỏ hàng, nếu có thì cập nhật số lượng
-        cart_item, created = CartItem.objects.get_or_create(cart=cart, product=product, store = store)
+        cart_item, created = CartItem.objects.get_or_create(cart=cart, product=product, store = store, color = color)
 
         if not created:
             # Nếu sản phẩm đã có trong giỏ hàng, tăng số lượng sản phẩm
@@ -128,6 +130,7 @@ class CartViewSet(viewsets.ViewSet):
             cart_item.save()
         else:
             cart_item.quantity = quantity
+            cart_item.color = color
             cart_item.save()
 
         return Response({

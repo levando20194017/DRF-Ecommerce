@@ -45,8 +45,9 @@ class OrderViewSet(viewsets.ViewSet):
         - guest_id
         - order_details (array has object such as [{
             store_id: int,
-            product_id: int
-            quantity: int
+            product_id: int,
+            quantity: int,
+            color: string
         }])
         - payment_methods: option select
         - shipping_cost (tạm thời là 0)
@@ -132,6 +133,7 @@ class OrderViewSet(viewsets.ViewSet):
                 product = get_object_or_404(Product, id=detail['product_id'])
                 store = get_object_or_404(Store, id=detail['store_id'])
                 quantity = detail['quantity']
+                color = detail['color']
                 unit_price = product.price
                 
                 OrderDetail.objects.create(
@@ -140,6 +142,7 @@ class OrderViewSet(viewsets.ViewSet):
                     store=store,
                     product_code=product.code,
                     product_name=product.name,
+                    color = color,
                     quantity=quantity,
                     unit_price=unit_price,
                     location_pickup=store.address

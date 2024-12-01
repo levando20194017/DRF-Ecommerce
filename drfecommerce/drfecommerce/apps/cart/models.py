@@ -21,6 +21,7 @@ class CartItem(models.Model):
     store = models.ForeignKey(Store, on_delete=models.CASCADE)  # Liên kết với cửa hàng chứa sản phẩm
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.IntegerField(default=1)  # Số lượng sản phẩm trong giỏ hàng
+    color = models.CharField(default= '', max_length= 50, null=True, blank=True) #màu sắc của sản phẩm
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     
