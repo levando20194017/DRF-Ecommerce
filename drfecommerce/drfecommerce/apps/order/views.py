@@ -97,8 +97,8 @@ class OrderViewSet(viewsets.ViewSet):
                 return Response({"message": "Quantity must be greater than zero.", "status": 400})
             
             unit_price = product.price
-            if product.promotion:
-                promotion = get_object_or_404(Promotion, id=product.promotion)
+            if product.promotion.id:
+                promotion = get_object_or_404(Promotion, id=product.promotion.id)
                 
                 today = timezone.now().date()  # Lấy ngày hiện tại
                 
@@ -322,6 +322,7 @@ class OrderViewSet(viewsets.ViewSet):
             <tr>
                 <td>{detail.product_name}</td>
                 <td>{detail.quantity}</td>
+                <td>{detail.color}</td>
                 <td>{detail.unit_price} VND</td>
                 <td>{detail.location_pickup}</td>
             </tr>
@@ -400,6 +401,7 @@ class OrderViewSet(viewsets.ViewSet):
             if order.order_status == 'pending':
                 # Update the order status to 'cancel'
                 order.order_status = 'cancelled'
+                order.date_cancelled = timezone.now
                 order.save()
                 
                 guest = order.guest  # Assuming the guest is related to the order
@@ -462,12 +464,14 @@ class OrderViewSet(viewsets.ViewSet):
         - guest_id: ID of the guest.
         - start_date: The start date to filter orders (format: YYYY-MM-DD).
         - end_date: The end date to filter orders (format: YYYY-MM-DD).
+        - order_status: string of (pending, confirmed, shipped, delivered, cancelled, returned)
         """
         page_index = int(request.GET.get('page_index', 1))
         page_size = int(request.GET.get('page_size', 10))
         guest_id = request.GET.get('guest_id')
         start_date = request.GET.get('start_date')  # Get the start date parameter
         end_date = request.GET.get('end_date')      # Get the end date parameter
+        order_status = request.GET.get('order_status')      # Get the end date parameter
 
         if not guest_id:
             return Response({
@@ -485,6 +489,9 @@ class OrderViewSet(viewsets.ViewSet):
 
         # Start building the query
         orders = Order.objects.filter(guest=guest)
+        
+        if order_status:
+            orders = orders.filter(order_status=order_status) #filter by order
 
         # If start_date or end_date is provided, filter orders by date range
         if start_date or end_date:
@@ -684,6 +691,7 @@ class AdminOrderViewSet(viewsets.ViewSet):
         order.order_status = new_status
         if order.order_status == "confirmed":
             guest = order.guest  # Assuming the guest is related to the order
+            order.date_confirmed = timezone.now
             create_notification(
                 guest=guest,  # Gửi đối tượng guest
                 notification_type="order_update",  # Loại thông báo
@@ -693,6 +701,7 @@ class AdminOrderViewSet(viewsets.ViewSet):
             )
         if order.order_status == "delivered":
             guest = order.guest  # Assuming the guest is related to the order
+            order.date_delivered = timezone.now
             create_notification(
                 guest=guest,  # Gửi đối tượng guest
                 notification_type="order_update",  # Loại thông báo
@@ -703,6 +712,7 @@ class AdminOrderViewSet(viewsets.ViewSet):
             
         if order.order_status == "shipped":
             guest = order.guest  # Assuming the guest is related to the order
+            order.date_shipped = timezone.now
             create_notification(
                 guest=guest,  # Gửi đối tượng guest
                 notification_type="order_update",  # Loại thông báo

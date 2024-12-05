@@ -249,7 +249,6 @@ class AdminViewsetUploadImage(viewsets.ViewSet):
         # Sử dụng default_storage để lưu ảnh vào thư mục cục bộ hoặc dịch vụ lưu trữ khác trong tương lai
         save_path = os.path.join(base.MEDIA_ROOT, img_name)
         file_path = default_storage.save(save_path, ContentFile(image.read()))
-        print(file_path)
         file_url = default_storage.url(file_path)
 
         return Response({
