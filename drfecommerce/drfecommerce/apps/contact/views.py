@@ -61,8 +61,7 @@ class AdminContactViewSet(viewsets.ViewSet):
         page_size = int(request.GET.get('page_size', 10))
         name_query = request.GET.get('name', '').strip()
 
-        # Lọc sản phẩm theo tên
-        contacts = Contact.objects.all()
+        contacts = Contact.objects.all().order_by('-created_at')
         if name_query:
             contacts = Contact.objects.filter(full_name__icontains=name_query)
 
@@ -85,6 +84,89 @@ class AdminContactViewSet(viewsets.ViewSet):
                 "total_items": paginator.count,
                 "page_index": page_index,
                 "page_size": page_size,
-                "categories": serializer.data
+                "contacts": serializer.data
             }
         }, status=status.HTTP_200_OK)
+        
+    @action(detail=False, methods=['delete'], url_path="delete-contact")
+    def delete_contact(self, request):
+        """
+        API to search categories by name with pagination.
+        - contact_id: int
+        """
+        contact_id = request.query_params.get("contact_id")
+
+        if not contact_id:
+            return Response({
+                "status": status.HTTP_400_BAD_REQUEST,
+                "message": "Contact ID is required."
+            })
+
+        try:
+            contact = Contact.objects.get(id=contact_id)
+            contact.delete()
+            return Response({
+                "status": status.HTTP_200_OK,
+                "message": "OK"
+            }, status=status.HTTP_200_OK)
+        except Contact.DoesNotExist:
+            return Response({
+                "status": status.HTTP_404_NOT_FOUND,
+                "message": "Contact not found."
+            })
+        except Exception as e:
+            return Response({
+                "status": status.HTTP_400_BAD_REQUEST,
+                "message": str(e)
+            })
+    
+    @action(detail=False, methods=['patch'], url_path="update-advised-status")
+    def update_advised_status(self, request):
+        """
+        API to update `is_advised` field for multiple contacts.
+        Request body example:
+        [
+            {"id": 1, "value": true},
+            {"id": 2, "value": false}
+        ]
+        """
+        try:
+            data = request.data  # Expecting a list of objects
+            if not isinstance(data, list):
+                return Response({
+                    "status": status.HTTP_400_BAD_REQUEST,
+                    "message": "Request data should be a list of objects."
+                })
+
+            # Validate each item in the list
+            for item in data:
+                if not isinstance(item, dict) or 'id' not in item or 'is_advised' not in item:
+                    return Response({
+                        "status": status.HTTP_400_BAD_REQUEST,
+                        "message": "Each item must contain 'id' and 'value' fields."
+                    }, status=status.HTTP_400_BAD_REQUEST)
+
+                contact_id = item['id']
+                is_advised = item['is_advised']
+
+                # Update the record
+                try:
+                    contact = Contact.objects.get(id=contact_id)
+                    contact.is_advised = is_advised
+                    contact.save()
+                except Contact.DoesNotExist:
+                    return Response({
+                        "status": status.HTTP_404_NOT_FOUND,
+                        "message": f"Contact with id {contact_id} not found."
+                    })
+
+            return Response({
+                "status": status.HTTP_200_OK,
+                "message": "All records updated successfully."
+            })
+
+        except Exception as e:
+            return Response({
+                "status": status.HTTP_400_BAD_REQUEST,
+                "message": str(e)
+            })

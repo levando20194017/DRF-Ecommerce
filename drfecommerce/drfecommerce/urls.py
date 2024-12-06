@@ -192,6 +192,8 @@ urlpatterns = [
     
     path("api/contact/create-new-contact/", views_contact.ContactViewSet.as_view({'post': 'create_contact'}), name='create-new-contact'),
     path("api/contact/admin/search-contacts/", views_contact.AdminContactViewSet.as_view({'get': 'search_contacts'}), name='search-contacts'),
+    path("api/contact/admin/delete-contact/", views_contact.AdminContactViewSet.as_view({'delete': 'delete_contact'}), name='delete-contact'),
+    path("api/contact/admin/update-advised-status/", views_contact.AdminContactViewSet.as_view({'patch': 'update_advised_status'}), name='update-advised-status'),
     
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/schema/docs", SpectacularSwaggerView.as_view(url_name="schema")),
