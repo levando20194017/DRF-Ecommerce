@@ -46,7 +46,7 @@ class NotificationViewSet(viewsets.ViewSet):
         - page_index: The index of the page (default is 1).
         - page_size: The number of items per page (default is 10).
         """
-        guest_id = request.GET.get('guest_id')
+        guest_id = request.GET.get('id')
         page_index = int(request.GET.get('page_index', 1))
         page_size = int(request.GET.get('page_size', 10))
         if not guest_id:
@@ -63,7 +63,7 @@ class NotificationViewSet(viewsets.ViewSet):
                 "message": "Guest not found."
             })
             
-        notifications = Notification.objects.filter(guest=guest)
+        notifications = Notification.objects.filter(guest=guest).order_by("-created_at")
         
         paginator = Paginator(notifications, page_size)
 
@@ -118,4 +118,18 @@ class NotificationViewSet(viewsets.ViewSet):
         return Response({
             "status": status.HTTP_200_OK,
             "message": "Seen this notification",
+        }, status=status.HTTP_200_OK)
+        
+    @action(detail=False, methods=['get'], url_path="count-unread")
+    def count_unread_notifications(self, request):
+        """
+        API đếm số thông báo chưa đọc.
+        """
+        guest_id = request.GET.get('id')
+        notification = Notification.objects.filter(guest_id=guest_id, is_read = False)
+        unread_count = notification.count()
+        return Response({
+            "status": status.HTTP_200_OK,
+            "message": "Counted unread notifications.",
+            "unread_count": unread_count
         }, status=status.HTTP_200_OK)

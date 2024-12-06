@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     "drfecommerce.apps.store",
     "drfecommerce.apps.tag",
     "drfecommerce.apps.transaction",
+    "drfecommerce.apps.contact",
 ]
 
 ALLOWED_HOSTS = ['*']

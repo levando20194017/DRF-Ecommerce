@@ -18,7 +18,8 @@ class Notification(models.Model):
     created_at = models.DateTimeField(default=timezone.now)  # Thời gian tạo thông báo
     url = models.TextField(null=True, blank=True)  # URL dẫn đến chi tiết liên quan của thông báo
     attachment_url = models.TextField(null=True, blank=True)  # Link đến file đính kèm (nếu có) ví dụ như hình ảnh
-    
+    total_cost = models.FloatField(default=0)
+    image = models.CharField(max_length=255, null=True, blank=True, default="")
     class Meta:
         db_table = 'notifications'
         

@@ -172,7 +172,9 @@ class OrderViewSet(viewsets.ViewSet):
                 notification_type="order_update",  # Loại thông báo
                 message=f"Your order #{order.id} has been placed successfully.",  # Nội dung thông báo
                 related_object_id=order.id,  # Liên kết với mã đơn hàng
-                url=f"/orders/{order.id}"  # URL dẫn đến đơn hàng
+                url=f"/orders/{order.id}",  # URL dẫn đến đơn hàng
+                total_cost = total_cost,
+                image = order_details[0].product.image
             )
         
             # Handle payment processing
@@ -410,7 +412,8 @@ class OrderViewSet(viewsets.ViewSet):
                     notification_type="order_update",  # Loại thông báo
                     message=f"Your order #{order.id} has been canceled.",  # Nội dung thông báo
                     related_object_id=order.id,  # Liên kết với mã đơn hàng
-                    url=f"/orders/{order.id}"  # URL dẫn đến đơn hàng đã hủy
+                    url=f"/orders/{order.id}",  # URL dẫn đến đơn hàng đã hủy
+                    total_cost = order.total_cost
                 )
             
                 # Send email notification to the admin
@@ -695,9 +698,10 @@ class AdminOrderViewSet(viewsets.ViewSet):
             create_notification(
                 guest=guest,  # Gửi đối tượng guest
                 notification_type="order_update",  # Loại thông báo
-                message=f"Your order #{order.id} has been confirmed by VivaFlower.",  # Nội dung thông báo
+                message=f"Your order #{order.id} has been confirmed.",  # Nội dung thông báo
                 related_object_id=order.id,  # Liên kết với mã đơn hàng
-                url=f"/orders/{order.id}"  # URL dẫn đến đơn hàng đã hủy
+                url=f"/orders/{order.id}",  # URL dẫn đến đơn hàng đã hủy
+                total_cost = order.total_cost
             )
         if order.order_status == "delivered":
             guest = order.guest  # Assuming the guest is related to the order
@@ -707,7 +711,8 @@ class AdminOrderViewSet(viewsets.ViewSet):
                 notification_type="order_update",  # Loại thông báo
                 message=f"Your order #{order.id} has been delivered. You can rate the product quality.",  # Nội dung thông báo
                 related_object_id=order.id,  # Liên kết với mã đơn hàng
-                url=f"/orders/{order.id}"  # URL dẫn đến đơn hàng đã hủy
+                url=f"/orders/{order.id}",  # URL dẫn đến đơn hàng đã hủy
+                total_cost = order.total_cost
             )
             
         if order.order_status == "shipped":
@@ -718,7 +723,8 @@ class AdminOrderViewSet(viewsets.ViewSet):
                 notification_type="order_update",  # Loại thông báo
                 message=f"Your order #{order.id} has been delivered to the carrier.",  # Nội dung thông báo
                 related_object_id=order.id,  # Liên kết với mã đơn hàng
-                url=f"/orders/{order.id}"  # URL dẫn đến đơn hàng đã hủy
+                url=f"/orders/{order.id}",  # URL dẫn đến đơn hàng đã hủy
+                total_cost = order.total_cost
             )
             
         order.save()

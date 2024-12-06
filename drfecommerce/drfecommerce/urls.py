@@ -20,6 +20,7 @@ from drfecommerce.apps.product_incoming import views as views_product_incoming
 from drfecommerce.apps.product_sale import views as views_product_sale
 from drfecommerce.apps.product_store import views as views_product_store
 from drfecommerce.apps.notification import views as views_notification
+from drfecommerce.apps.contact import views as views_contact
 from drfecommerce.settings import base
 from django.conf.urls.static import static
 
@@ -187,6 +188,10 @@ urlpatterns = [
     #notifications
     path("api/notification/get-list-notifications/", views_notification.NotificationViewSet.as_view({'get': 'list_notifications'}), name='get-list-notifications'),
     path("api/notification/read-notification/", views_notification.NotificationViewSet.as_view({'put': 'read_notification'}), name='read-notification'),
+    path("api/notification/count-unread-notifications/", views_notification.NotificationViewSet.as_view({'get': 'count_unread_notifications'}), name='count-unread-notifications'),
+    
+    path("api/contact/create-new-contact/", views_contact.ContactViewSet.as_view({'post': 'create_contact'}), name='create-new-contact'),
+    path("api/contact/admin/search-contacts/", views_contact.AdminContactViewSet.as_view({'get': 'search_contacts'}), name='search-contacts'),
     
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/schema/docs", SpectacularSwaggerView.as_view(url_name="schema")),
