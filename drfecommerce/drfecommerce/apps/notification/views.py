@@ -15,7 +15,7 @@ from django.core.paginator import PageNotAnInteger
 
 def create_notification(
     guest, notification_type, message, 
-    related_object_id=None, url=None, attachment_url = None):
+    related_object_id=None, url=None, attachment_url = None, total_cost = 0, image = None ):
     """
     Hàm tiện ích để tạo thông báo
     :param recipient: Người nhận thông báo (Guest)
@@ -32,7 +32,9 @@ def create_notification(
         message=message,
         related_object_id=related_object_id,
         url=url,
-        attachment_url = attachment_url
+        attachment_url = attachment_url,
+        total_cost = total_cost,
+        image = image
     )
 
 class NotificationViewSet(viewsets.ViewSet):

@@ -2,7 +2,7 @@ from rest_framework import viewsets, status
 from rest_framework.response import Response
 from django.core.mail import send_mail
 from .models import Order
-from .serializers import OrderSerializer
+from .serializers import OrderSerializer, OrderCreateSerializer
 from drfecommerce.apps.order_detail.models import OrderDetail
 from drfecommerce.apps.promotion.models import Promotion
 from drfecommerce.apps.product.models import Product
@@ -32,6 +32,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import random
 from django.shortcuts import render
+from django.db import transaction
 
 class OrderViewSet(viewsets.ViewSet):
     #api xử lí tạo đơn hàng khi mà người dùng chọn phương thức là thanh toán khi nhận hàng
@@ -79,112 +80,138 @@ class OrderViewSet(viewsets.ViewSet):
             return Response({"message": "Order details are required."})
 
         total_cost = 0
-        
-        for detail in order_details:
-            quantity = detail['quantity']
-            #cần check thêm ở chỗ product_store. Nếu sản phẩm còn hàng thì cho vào
-            product = get_object_or_404(Product, id=int(detail['product_id']))
-            store = get_object_or_404(Store, id=detail['store_id'])
-            
-            # Kiểm tra số lượng tồn kho
-            product_store = get_object_or_404(ProductStore, product=product, store=store)
-            if product_store.remaining_stock < quantity:
-                return Response({"message": f"Not enough stock for {product.name}. Available: {product_store.remaining_stock}",
-                                 "status": 400
-                                 })
-
-            if quantity <= 0:
-                return Response({"message": "Quantity must be greater than zero.", "status": 400})
-            
-            unit_price = product.price
-            if product.promotion.id:
-                promotion = get_object_or_404(Promotion, id=product.promotion.id)
-                
-                today = timezone.now().date()  # Lấy ngày hiện tại
-                
-                # Kiểm tra trạng thái và thời gian hiệu lực của khuyến mãi
-                if promotion.status == "active" and promotion.from_date <= today <= promotion.to_date:
-                    if promotion.discount_type == "percentage":
-                        unit_price *= (1 - promotion.discount_value / 100)
-                    elif promotion.discount_type == "fixed":
-                        unit_price -= promotion.discount_value
-                    unit_price = max(unit_price, 0)  # Đảm bảo giá không âm
-
-            total_cost += unit_price * quantity
-        
-            product = get_object_or_404(Product, id=int(detail['product_id']))
-            unit_price = product.price
-            total_cost += unit_price * quantity
-        #chỗ này cần xem lại gst_amount với shipping_cost (cái này không thể tự truyền lên được)
-        total_cost += total_cost * gst_amount + shipping_cost
-
-        data['total_cost'] = total_cost
-        data['payment_methods'] = payment_method
-
-        # guest = get_object_or_404(Guest, id=guest_id)
-        data['guest'] = guest_id
-        
-        serializer = OrderSerializer(data=data)
-        if serializer.is_valid(raise_exception=True):
-            order = serializer.save()
-
-            # Step 2: Create OrderDetails
-            for detail in order_details:
-                product = get_object_or_404(Product, id=detail['product_id'])
-                store = get_object_or_404(Store, id=detail['store_id'])
-                quantity = detail['quantity']
-                color = detail['color']
-                unit_price = product.price
-                
-                OrderDetail.objects.create(
-                    order=order,
-                    product=product,
-                    store=store,
-                    product_code=product.code,
-                    product_name=product.name,
-                    color = color,
-                    quantity=quantity,
-                    unit_price=unit_price,
-                    location_pickup=store.address
-                )
-
-            # Step 3: Xử lý các sản phẩm trong giỏ hàng sau khi tạo đơn hàng thành công
-            #Check nếu nó nằm trong giỏ hàng thì loại bỏ nó đi
-            cart = Cart.objects.filter(guest_id=guest_id).first()
-            if cart:
+        try:
+            with transaction.atomic():
                 for detail in order_details:
-                    product = get_object_or_404(Product, id=detail['product_id'])
+                    quantity = detail['quantity']
+                    #cần check thêm ở chỗ product_store. Nếu sản phẩm còn hàng thì cho vào
+                    product = get_object_or_404(Product, id=int(detail['product_id']))
                     store = get_object_or_404(Store, id=detail['store_id'])
                     
-                    # Kiểm tra sản phẩm có trong giỏ hàng không
-                    cart_item = CartItem.objects.filter(cart=cart, product=product, store=store).first()
-                    if cart_item:
-                        # Nếu có, loại bỏ nó ra khỏi giỏ hàng
-                        cart_item.delete()
-            # Step 4: Gửi thông báo đến guest
-            try:
-                guest = Guest.objects.get(id=guest_id)  # Lấy đối tượng guest
-            except Guest.DoesNotExist:
-                return Response({'Guest': 'Order not found.', "status":status.HTTP_404_NOT_FOUND})
-            
-            create_notification(
-                guest=guest,  # Gửi đối tượng guest
-                notification_type="order_update",  # Loại thông báo
-                message=f"Your order #{order.id} has been placed successfully.",  # Nội dung thông báo
-                related_object_id=order.id,  # Liên kết với mã đơn hàng
-                url=f"/orders/{order.id}",  # URL dẫn đến đơn hàng
-                total_cost = total_cost,
-                image = order_details[0].product.image
-            )
-        
-            # Handle payment processing
-            if payment_method == "credit_card":
-                return self.redirect_to_payment_gateway(request, order)
-            elif payment_method == "cash_on_delivery":
-                self.send_order_email_to_admin(order)
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
+                    # Kiểm tra số lượng tồn kho
+                    product_store = get_object_or_404(ProductStore, product=product, store=store)
+                    if product_store.remaining_stock < quantity:
+                        return Response({"message": f"Not enough stock for {product.name}. Available: {product_store.remaining_stock}",
+                                        "status": 400
+                                        })
 
-        return Response(serializer.errors)
+                    if quantity <= 0:
+                        return Response({"message": "Quantity must be greater than zero.", "status": 400})
+                    
+                    unit_price = product.price
+                    if product.promotion.id:
+                        promotion = get_object_or_404(Promotion, id=product.promotion.id)
+                        
+                        today = timezone.now().date()  # Lấy ngày hiện tại
+                        
+                        # Kiểm tra trạng thái và thời gian hiệu lực của khuyến mãi
+                        if promotion.status == "active" and promotion.from_date <= today <= promotion.to_date:
+                            if promotion.discount_type == "percentage":
+                                unit_price *= (1 - promotion.discount_value / 100)
+                            elif promotion.discount_type == "fixed":
+                                unit_price -= promotion.discount_value
+                            unit_price = max(unit_price, 0)  # Đảm bảo giá không âm
+                
+                    total_cost += unit_price * quantity
+                    
+                #chỗ này cần xem lại gst_amount với shipping_cost (cái này không thể tự truyền lên được)
+                total_cost += total_cost * gst_amount + shipping_cost
+
+                data['total_cost'] = total_cost
+                data['payment_methods'] = payment_method
+
+                # guest = get_object_or_404(Guest, id=guest_id)
+                data['guest'] = guest_id
+                
+                serializer = OrderCreateSerializer(data=data)
+                noti_avatar = ""
+                if serializer.is_valid(raise_exception=True):
+                    order = serializer.save()
+
+                    # Step 2: Create OrderDetails
+                    for detail in order_details:
+                        product = get_object_or_404(Product, id=detail['product_id'])
+                        noti_avatar = product.image
+                        store = get_object_or_404(Store, id=detail['store_id'])
+                        promotion = product.promotion
+                        quantity = detail['quantity']
+                        color = detail['color']
+                        unit_price = product.price
+                        
+                        today = timezone.now().date()  # Lấy ngày hiện tại
+                        # Kiểm tra trạng thái và thời gian hiệu lực của khuyến mãi
+                        if promotion.status == "active" and promotion.from_date <= today <= promotion.to_date:
+                            OrderDetail.objects.create(
+                                order=order,
+                                product=product,
+                                store=store,
+                                product_code=product.code,
+                                product_name=product.name,
+                                promotion_name = promotion.name,
+                                promotion_discount_value = promotion.discount_value,
+                                promotion_discount_type = promotion.discount_type,
+                                color = color,
+                                quantity=quantity,
+                                unit_price=unit_price,
+                                location_pickup=store.address
+                            )
+                        else:
+                            OrderDetail.objects.create(
+                                order=order,
+                                product=product,
+                                store=store,
+                                product_code=product.code,
+                                product_name=product.name,
+                                promotion_name = "",
+                                promotion_discount_value = None,
+                                promotion_discount_type = "",
+                                color = color,
+                                quantity=quantity,
+                                unit_price=unit_price,
+                                location_pickup=store.address
+                            )
+
+                    # Step 3: Xử lý các sản phẩm trong giỏ hàng sau khi tạo đơn hàng thành công
+                    #Check nếu nó nằm trong giỏ hàng thì loại bỏ nó đi
+                    cart = Cart.objects.filter(guest_id=guest_id).first()
+                    if cart:
+                        for detail in order_details:
+                            product = get_object_or_404(Product, id=detail['product_id'])
+                            store = get_object_or_404(Store, id=detail['store_id'])
+                            
+                            # Kiểm tra sản phẩm có trong giỏ hàng không
+                            cart_item = CartItem.objects.filter(cart=cart, product=product, store=store).first()
+                            if cart_item:
+                                # Nếu có, loại bỏ nó ra khỏi giỏ hàng
+                                cart_item.delete()
+                    # Step 4: Gửi thông báo đến guest
+                    try:
+                        guest = Guest.objects.get(id=guest_id)  # Lấy đối tượng guest
+                    except Guest.DoesNotExist:
+                        return Response({'Guest': 'Order not found.', "status":status.HTTP_404_NOT_FOUND})
+                    
+                    create_notification(
+                        guest=guest,  # Gửi đối tượng guest
+                        notification_type="order_update",  # Loại thông báo
+                        message=f"Your order #{order.id} has been placed successfully.",  # Nội dung thông báo
+                        related_object_id=order.id,  # Liên kết với mã đơn hàng
+                        url=f"/order-status?order_id={order.id}",  # URL dẫn đến đơn hàng
+                        total_cost = total_cost,
+                        image = noti_avatar
+                    )
+                
+                    # Handle payment processing
+                    if payment_method == "credit_card":
+                        return self.redirect_to_payment_gateway(request, order)
+                    elif payment_method == "cash_on_delivery":
+                        self.send_order_email_to_admin(order)
+                        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+                return Response(serializer.errors)
+        except ValueError as e:
+            return Response({"message": str(e), "status": 400})
+        except Exception as e:
+            return Response({"message": "An error occurred.", "details": str(e), "status": status.HTTP_500_INTERNAL_SERVER_ERROR,})
     
     def redirect_to_payment_gateway(self, request, order, *args, **kwargs):
         order_id = order.id
@@ -207,8 +234,7 @@ class OrderViewSet(viewsets.ViewSet):
                 bank_message=''
             )
         except Exception:
-            return JsonResponse({"message": "Failed to create transaction", "status": 500}, status=500)
-
+                return JsonResponse({"message": "Failed to create transaction", "status": 500}, status=500)
         vnp = vnpay()
         vnp.requestData['vnp_Version'] = '2.1.0'
         vnp.requestData['vnp_Command'] = 'pay'
@@ -233,83 +259,8 @@ class OrderViewSet(viewsets.ViewSet):
             payment_url = vnp.get_payment_url(base.VNPAY_PAYMENT_URL, base.VNPAY_HASH_SECRET_KEY)
         except Exception:
             return JsonResponse({"message": "Failed to generate payment URL", "status": "error"}, status=500)
-
         return JsonResponse({'payment_url': payment_url, 'status': 200}, status=200)
-    
-    # def redirect_to_payment_gateway(self, order, *args, **kwargs):
-    #     # Bước 1: Lấy thông tin cần thiết cho yêu cầu thanh toán
-        
-    #     payment_data = {
-    #         "amount": order.total_cost,  # Số tiền cần thanh toán
-    #         "order_id": order.id,
-    #         # Các thông tin cần thiết khác
-    #     }
-
-    #     # Bước 2: Gửi yêu cầu POST đến PayPal hoặc Momo API
-    #     paypal_url = "https://api.sandbox.paypal.com/v1/payments/payment"
-    #     headers = {
-    #         "Content-Type": "application/json",
-    #         "Authorization": "Bearer <Access-Token>"  # Thay Access-Token bằng token nhận được từ PayPal
-    #     }
-        
-    #     # Dữ liệu để tạo thanh toán trên PayPal
-    #     data = {
-    #         "intent": "sale",
-    #         "redirect_urls": {
-    #             "return_url": "https://your-backend-url.com/payment-success",
-    #             "cancel_url": "https://your-backend-url.com/payment-cancel"
-    #         },
-    #         "payer": {
-    #             "payment_method": "paypal"
-    #         },
-    #         "transactions": [{
-    #             "amount": {
-    #                 "total": str(order.total_cost),
-    #                 "currency": "USD"
-    #             },
-    #             "description": f"Order #{order.id} payment"
-    #         }]
-    #     }
-        
-    #     # Bước 3: Gửi yêu cầu đến PayPal API
-    #     response = requests.post(paypal_url, json=data, headers=headers)
-    #     response_data = response.json()
-        
-    #     # Bước 4: Kiểm tra phản hồi và lấy link thanh toán
-    #     if response.status_code == 201:
-    #         for link in response_data['links']:
-    #             if link['rel'] == 'approval_url':
-    #                 payment_url = link['href']
-    #                 return Response({'redirect_url': payment_url, 'amount': order.total_cost}, status=status.HTTP_302_FOUND)
-    #     else:
-    #         return Response({'error': 'Payment failed'})
-        
-    # def payment_callback(self, request, *args, **kwargs):
-    #     # Nhận thông tin từ cổng thanh toán (giả sử cổng thanh toán gọi callback tới endpoint này)
-    #     transaction_data = request.data
-    #     order_id = transaction_data.get('order_id')
-    #     paid_amount = transaction_data.get('amount')  # Số tiền người dùng đã thanh toán
-    #     payment_status = transaction_data.get('status')  # Trạng thái thanh toán
-
-    #     try:
-    #         order = Order.objects.get(id=order_id)
-
-    #         # Kiểm tra nếu số tiền thanh toán có khớp với total_cost
-    #         if paid_amount == order.total_cost and payment_status == 'success':
-    #             # Cập nhật trạng thái thanh toán của đơn hàng
-    #             order.payment_status = 'paid'
-    #             order.order_status = 'confirmed'
-    #             order.save()
-
-    #             # Gửi email xác nhận
-    #             self.send_order_email_to_admin(order)
-
-    #             return Response({'message': 'Payment successful and order confirmed.', "status":status.HTTP_200_OK}, status=status.HTTP_200_OK)
-    #         else:
-    #             return Response({'error': 'Payment amount mismatch or payment failed.', "status":status.HTTP_400_BAD_REQUEST})
-    #     except Order.DoesNotExist:
-    #         return Response({'error': 'Order not found.', "status":status.HTTP_404_NOT_FOUND})
-
+            
     def send_order_email_to_admin(self, order, *args, **kwargs):
         # Gửi email với thông tin order cho admin
         subject = f"New order #{order.id} - {order.recipient_name}"
