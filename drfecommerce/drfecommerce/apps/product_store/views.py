@@ -265,6 +265,57 @@ class PublicProductStoreViewSet(viewsets.ModelViewSet):
             }
         }, status=status.HTTP_200_OK)
         
+    @action(detail=True, methods=['get'], url_path='search-products-in-store')
+    def search_products_in_store(self, request, pk=None):
+        """
+        API lấy danh sách các sản phẩm trong cửa hàng theo store đối với người dùng
+        query_params:
+        - page_index: trang (mặc định là 1)
+        - page_size: số lượng sản phẩm trên mỗi trang (mặc định là 10)
+        - store_id: ID của store để lọc
+        - textSearch: string search theo tên sản phẩm
+        """
+        page_index = int(request.GET.get('page_index', 1))
+        page_size = int(request.GET.get('page_size', 10))
+        store_id = request.GET.get('store_id')
+        name = request.GET.get('textSearch')
+        
+        try:
+            store = Store.objects.get(id=store_id)
+        except Store.DoesNotExist:
+            return Response({
+                "status": status.HTTP_404_NOT_FOUND,
+                "message": "Store not found."
+            })
+
+        products = ProductStore.objects.filter(store=store, delete_at__isnull = True)
+        
+        if name: 
+            products = products.filter(product__name__icontains=name)
+
+        paginator = Paginator(products, page_size)
+
+        try:
+            paginated_products = paginator.page(page_index)
+        except PageNotAnInteger:
+            paginated_products = paginator.page(1)
+        except EmptyPage:
+            paginated_products = paginator.page(paginator.num_pages)
+
+        serializer = DetailProductStoreSerializer(paginated_products, many=True)
+
+        return Response({
+            "status": status.HTTP_200_OK,
+            "message": "OK",
+            "data": {
+                "total_pages": paginator.num_pages,
+                "total_items": paginator.count,
+                "page_index": page_index,
+                "page_size": page_size,
+                "products": serializer.data
+            }
+        }, status=status.HTTP_200_OK)
+        
     @action(detail=False, methods=['get'], url_path='detail-of-product-and-store')
     def detail_product_store(self, request):
         """

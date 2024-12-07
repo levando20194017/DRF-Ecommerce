@@ -258,8 +258,8 @@ class OrderViewSet(viewsets.ViewSet):
         try:
             payment_url = vnp.get_payment_url(base.VNPAY_PAYMENT_URL, base.VNPAY_HASH_SECRET_KEY)
         except Exception:
-            return JsonResponse({"message": "Failed to generate payment URL", "status": "error"}, status=500)
-        return JsonResponse({'payment_url': payment_url, 'status': 200}, status=200)
+            return JsonResponse({"message": "Failed to generate payment URL", "status": 500})
+        return JsonResponse({'payment_url': payment_url, 'status': 201}, status=201)
             
     def send_order_email_to_admin(self, order, *args, **kwargs):
         # Gửi email với thông tin order cho admin
@@ -354,7 +354,7 @@ class OrderViewSet(viewsets.ViewSet):
             if order.order_status == 'pending':
                 # Update the order status to 'cancel'
                 order.order_status = 'cancelled'
-                order.date_cancelled = timezone.now
+                order.date_cancelled = timezone.now()
                 order.save()
                 
                 guest = order.guest  # Assuming the guest is related to the order
@@ -363,7 +363,7 @@ class OrderViewSet(viewsets.ViewSet):
                     notification_type="order_update",  # Loại thông báo
                     message=f"Your order #{order.id} has been canceled.",  # Nội dung thông báo
                     related_object_id=order.id,  # Liên kết với mã đơn hàng
-                    url=f"/orders/{order.id}",  # URL dẫn đến đơn hàng đã hủy
+                    url=f"/order-status?order_id={order.id}",  # URL dẫn đến đơn hàng đã hủy
                     total_cost = order.total_cost
                 )
             
@@ -379,7 +379,6 @@ class OrderViewSet(viewsets.ViewSet):
                     'error': 'Order cannot be canceled because it is not in pending status.',
                     'status': status.HTTP_400_BAD_REQUEST
                     }, 
-                    status=status.HTTP_400_BAD_REQUEST
                 )
         except Order.DoesNotExist:
             return Response({'error': 'Order not found.'})
@@ -645,36 +644,36 @@ class AdminOrderViewSet(viewsets.ViewSet):
         order.order_status = new_status
         if order.order_status == "confirmed":
             guest = order.guest  # Assuming the guest is related to the order
-            order.date_confirmed = timezone.now
+            order.date_confirmed = timezone.now()
             create_notification(
                 guest=guest,  # Gửi đối tượng guest
                 notification_type="order_update",  # Loại thông báo
                 message=f"Your order #{order.id} has been confirmed.",  # Nội dung thông báo
                 related_object_id=order.id,  # Liên kết với mã đơn hàng
-                url=f"/orders/{order.id}",  # URL dẫn đến đơn hàng đã hủy
+                url=f"/order-status?order_id=/{order.id}",  # URL dẫn đến đơn hàng đã hủy
                 total_cost = order.total_cost
             )
         if order.order_status == "delivered":
             guest = order.guest  # Assuming the guest is related to the order
-            order.date_delivered = timezone.now
+            order.date_delivered = timezone.now()
             create_notification(
                 guest=guest,  # Gửi đối tượng guest
                 notification_type="order_update",  # Loại thông báo
                 message=f"Your order #{order.id} has been delivered. You can rate the product quality.",  # Nội dung thông báo
                 related_object_id=order.id,  # Liên kết với mã đơn hàng
-                url=f"/orders/{order.id}",  # URL dẫn đến đơn hàng đã hủy
+                url=f"/order-status?order_id={order.id}",  # URL dẫn đến đơn hàng đã hủy
                 total_cost = order.total_cost
             )
             
         if order.order_status == "shipped":
             guest = order.guest  # Assuming the guest is related to the order
-            order.date_shipped = timezone.now
+            order.date_shipped = timezone.now()
             create_notification(
                 guest=guest,  # Gửi đối tượng guest
                 notification_type="order_update",  # Loại thông báo
                 message=f"Your order #{order.id} has been delivered to the carrier.",  # Nội dung thông báo
                 related_object_id=order.id,  # Liên kết với mã đơn hàng
-                url=f"/orders/{order.id}",  # URL dẫn đến đơn hàng đã hủy
+                url=f"/order-status?order_id={order.id}",  # URL dẫn đến đơn hàng đã hủy
                 total_cost = order.total_cost
             )
             
