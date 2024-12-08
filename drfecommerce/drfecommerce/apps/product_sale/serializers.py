@@ -18,3 +18,4 @@ class ProductReportSaleSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductSale
         fields = ['product', 'sale_price', 'quantity_sold', 'vat', 'shipping_cost', 'sale_date']
+    

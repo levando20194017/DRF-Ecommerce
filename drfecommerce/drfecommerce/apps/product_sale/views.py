@@ -154,7 +154,7 @@ class PublicProductSaleViewSet(viewsets.ViewSet):
         ).order_by('-total_quantity_sold')  # Sắp xếp theo số lượng bán được nhiều nhất
 
         # Nếu danh sách sản phẩm đã bán rỗng, lấy danh sách mặc định từ bảng Product
-        if not product_sales.exists():
+        if len(product_sales) < 4:
             products = Product.objects.all()
             products = products.order_by('-updated_at')
             # Áp dụng phân trang cho sản phẩm
@@ -181,16 +181,20 @@ class PublicProductSaleViewSet(viewsets.ViewSet):
             }, status=status.HTTP_200_OK)
 
         # Áp dụng phân trang cho danh sách sản phẩm đã bán
-        paginator = Paginator(product_sales, page_size)
-        try:
-            paginated_product_sales = paginator.page(page_index)
-        except PageNotAnInteger:
-            paginated_product_sales = paginator.page(1)
-        except EmptyPage:
-            paginated_product_sales = paginator.page(paginator.num_pages)
+        product_ids = [item['product__id'] for item in product_sales]
+        products = Product.objects.filter(id__in=product_ids).order_by('-updated_at')
 
-        # Serialize dữ liệu sản phẩm đã bán
-        serializer = ProductReportSaleSerializer(paginated_product_sales, many=True)
+        # Áp dụng phân trang
+        paginator = Paginator(products, page_size)
+        try:
+            paginated_products = paginator.page(page_index)
+        except PageNotAnInteger:
+            paginated_products = paginator.page(1)
+        except EmptyPage:
+            paginated_products = paginator.page(paginator.num_pages)
+
+        # Serialize danh sách sản phẩm
+        serializer = ProductSerializer(paginated_products, many=True)
 
         return Response({
             "status": status.HTTP_200_OK,
@@ -200,7 +204,7 @@ class PublicProductSaleViewSet(viewsets.ViewSet):
                 "total_items": paginator.count,
                 "page_index": page_index,
                 "page_size": page_size,
-                "product_sales": serializer.data
+                "products": serializer.data
             }
         }, status=status.HTTP_200_OK)
 

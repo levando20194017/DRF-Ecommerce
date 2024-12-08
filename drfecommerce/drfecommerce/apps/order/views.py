@@ -596,7 +596,7 @@ class AdminOrderViewSet(viewsets.ViewSet):
         # Mỗi lần cập nhật trạng thái sẽ báo mail về cho người dùng.
         
         # Validate order status
-        if new_status not in ['confirmed', 'shipped', 'delivered', 'cancelled', 'returned']:
+        if new_status not in ['pending','confirmed', 'shipped', 'delivered', 'cancelled', 'returned']:
             return Response({
                 "status":status.HTTP_400_BAD_REQUEST,
                 "message": "Invalid order status."})
@@ -608,82 +608,110 @@ class AdminOrderViewSet(viewsets.ViewSet):
             return Response({"message": "Order not found.", "status":status.HTTP_404_NOT_FOUND})
 
         # Handle status-specific actions
-        if new_status == 'confirmed':
-            # Reduce quantity from ProductStore for each order detail
-            for detail in order.orderdetail_set.all():
-                product_store = ProductStore.objects.get(product=detail.product, store=detail.store)
-                if product_store.remaining_stock < detail.quantity:
-                    return Response({
-                        "status": status.HTTP_400_BAD_REQUEST,
-                        "message": f"Not enough stock for product {detail.product.name}."
-                        })
-                product_store.remaining_stock -= detail.quantity
-                product_store.save()
+        try:
+            with transaction.atomic():
+                if new_status == 'confirmed':
+                    # Reduce quantity from ProductStore for each order detail
+                    for detail in order.orderdetail_set.all():
+                        product_store = ProductStore.objects.get(product=detail.product, store=detail.store)
+                        if product_store.remaining_stock < detail.quantity:
+                            return Response({
+                                "status": status.HTTP_400_BAD_REQUEST,
+                                "message": f"Not enough stock for product {detail.product.name}."
+                                })
+                        product_store.remaining_stock -= detail.quantity
+                        product_store.save()
 
-        elif new_status == 'returned':
-            # Add quantity back to ProductStore
-            for detail in order.orderdetail_set.all():
-                product_store = ProductStore.objects.get(product=detail.product, store=detail.store)
-                product_store.remaining_stock += detail.quantity
-                product_store.save()
+                elif new_status == 'returned':
+                    # Add quantity back to ProductStore
+                    for detail in order.orderdetail_set.all():
+                        product_store = ProductStore.objects.get(product=detail.product, store=detail.store)
+                        product_store.remaining_stock += detail.quantity
+                        product_store.save()
 
-        elif new_status == 'delivered':
-            # Update ProductSale with sale details
-            for detail in order.orderdetail_set.all():
-                ProductSale.objects.create(
-                    product=detail.product,
-                    store=detail.store,
-                    order_detail=detail,
-                    sale_price=detail.unit_price,
-                    quantity_sold=detail.quantity,
-                    vat=order.gst_amount,
-                    shipping_cost=order.shipping_cost
-                )
+                elif new_status == 'delivered':
+                    # Update ProductSale with sale details
+                    for detail in order.orderdetail_set.all():
+                        ProductSale.objects.create(
+                            product=detail.product,
+                            store=detail.store,
+                            order_detail=detail,
+                            sale_price=detail.unit_price,
+                            quantity_sold=detail.quantity,
+                            vat=order.gst_amount,
+                            shipping_cost=order.shipping_cost
+                        )
 
-        # Update the order status
-        order.order_status = new_status
-        if order.order_status == "confirmed":
-            guest = order.guest  # Assuming the guest is related to the order
-            order.date_confirmed = timezone.now()
-            create_notification(
-                guest=guest,  # Gửi đối tượng guest
-                notification_type="order_update",  # Loại thông báo
-                message=f"Your order #{order.id} has been confirmed.",  # Nội dung thông báo
-                related_object_id=order.id,  # Liên kết với mã đơn hàng
-                url=f"/order-status?order_id=/{order.id}",  # URL dẫn đến đơn hàng đã hủy
-                total_cost = order.total_cost
-            )
-        if order.order_status == "delivered":
-            guest = order.guest  # Assuming the guest is related to the order
-            order.date_delivered = timezone.now()
-            create_notification(
-                guest=guest,  # Gửi đối tượng guest
-                notification_type="order_update",  # Loại thông báo
-                message=f"Your order #{order.id} has been delivered. You can rate the product quality.",  # Nội dung thông báo
-                related_object_id=order.id,  # Liên kết với mã đơn hàng
-                url=f"/order-status?order_id={order.id}",  # URL dẫn đến đơn hàng đã hủy
-                total_cost = order.total_cost
-            )
-            
-        if order.order_status == "shipped":
-            guest = order.guest  # Assuming the guest is related to the order
-            order.date_shipped = timezone.now()
-            create_notification(
-                guest=guest,  # Gửi đối tượng guest
-                notification_type="order_update",  # Loại thông báo
-                message=f"Your order #{order.id} has been delivered to the carrier.",  # Nội dung thông báo
-                related_object_id=order.id,  # Liên kết với mã đơn hàng
-                url=f"/order-status?order_id={order.id}",  # URL dẫn đến đơn hàng đã hủy
-                total_cost = order.total_cost
-            )
-            
-        order.save()
-        # Send notification email
-        self.send_order_status_update_email(order, new_status)
+                # Update the order status
+                order.order_status = new_status
+                if order.order_status == "confirmed":
+                    guest = order.guest  # Assuming the guest is related to the order
+                    order.date_confirmed = timezone.now()
+                    order.date_shipped = None
+                    order.date_returned= None
+                    order.date_cancelled = None
+                    create_notification(
+                        guest=guest,  # Gửi đối tượng guest
+                        notification_type="order_update",  # Loại thông báo
+                        message=f"Your order #{order.id} has been confirmed.",  # Nội dung thông báo
+                        related_object_id=order.id,  # Liên kết với mã đơn hàng
+                        url=f"/order-status?order_id=/{order.id}",  # URL dẫn đến đơn hàng đã hủy
+                        total_cost = order.total_cost
+                    )
+                if order.order_status == "delivered":
+                    guest = order.guest  # Assuming the guest is related to the order
+                    order.date_delivered = timezone.now()
+                    order.date_returned= None
+                    order.date_cancelled = None
+                    create_notification(
+                        guest=guest,  # Gửi đối tượng guest
+                        notification_type="order_update",  # Loại thông báo
+                        message=f"Your order #{order.id} has been delivered. You can rate the product quality.",  # Nội dung thông báo
+                        related_object_id=order.id,  # Liên kết với mã đơn hàng
+                        url=f"/order-status?order_id={order.id}",  # URL dẫn đến đơn hàng đã hủy
+                        total_cost = order.total_cost
+                    )
+                    
+                if order.order_status == "shipped":
+                    guest = order.guest  # Assuming the guest is related to the order
+                    order.date_shipped = timezone.now()
+                    order.date_delivered = None
+                    order.date_cancelled = None
+                    order.date_returned = None
+                    create_notification(
+                        guest=guest,  # Gửi đối tượng guest
+                        notification_type="order_update",  # Loại thông báo
+                        message=f"Your order #{order.id} has been delivered to the carrier.",  # Nội dung thông báo
+                        related_object_id=order.id,  # Liên kết với mã đơn hàng
+                        url=f"/order-status?order_id={order.id}",  # URL dẫn đến đơn hàng đã hủy
+                        total_cost = order.total_cost
+                    )
+                
+                if order.order_status == "pending":
+                    order.date_shipped = None
+                    order.date_confirmed= None
+                    order.date_returned= None
+                    order.date_delivered = None
+                    order.date_cancelled = None
+                
+                if order.order_status == "cancelled":
+                    order.date_cancelled = None
+                    
+                if order.order_status == "returned":
+                    order.date_returned = None
+                    
+                order.save()
+                # Send notification email
+                self.send_order_status_update_email(order, new_status)
 
-        return Response({
-            "status":status.HTTP_200_OK,
-            "message": f"Order status updated to {new_status}."}, status=status.HTTP_200_OK)
+                return Response({
+                    "status":status.HTTP_200_OK,
+                    "message": f"Order status updated to {new_status}."}, status=status.HTTP_200_OK)
+                
+        except ValueError as e:
+            return Response({"message": str(e), "status": 400})
+        except Exception as e:
+            return Response({"message": "An error occurred.", "details": str(e), "status": status.HTTP_500_INTERNAL_SERVER_ERROR,})
 
     def send_order_status_update_email(self, order, new_status):
         subject = f"Order #{order.id} Status Update: {new_status.capitalize()}"
@@ -731,6 +759,10 @@ class AdminOrderViewSet(viewsets.ViewSet):
         except Order.DoesNotExist:
             return Response({"message": "Order not found.", "status":status.HTTP_404_NOT_FOUND})
         
+        if order.order_status == "cancelled" and new_status == "paid":
+            return Response({
+                "status":status.HTTP_400_BAD_REQUEST,
+                "message": "Payment status cannot be changed once order has been cancelled."})
         # Update the order status
         order.payment_status = new_status
         order.save()

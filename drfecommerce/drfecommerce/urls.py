@@ -138,7 +138,7 @@ urlpatterns = [
     path("api/product_sale/admin/get-all-products-sale/", views_product_sale.AdminProductSaleViewSet.as_view({'get': 'get_all_products_sale'}), name='admin-get-all-products-sale'),
     path("api/product_sale/admin/get-total-report/", views_product_sale.AdminProductSaleViewSet.as_view({'get': 'get_total_report'}), name='get-total-report'),
     #thống kê sản phẩm đã bán (số lượng đã bán trên mỗi sản phẩm)
-    path("api/product_sale/admin/get-list-sold-products-filter/", views_product_sale.PublicProductSaleViewSet.as_view({'get': 'list_sold_products_filter'}), name='admin-get-list-sold-product-filter'),
+    path("api/product_sale/get-list-sold-products-filter/", views_product_sale.PublicProductSaleViewSet.as_view({'get': 'list_sold_products_filter'}), name='get-list-sold-product-filter'),
     
     #store
     #--private route
@@ -149,6 +149,8 @@ urlpatterns = [
     path("api/store/admin/restore-store/", views_store.StoreViewSet.as_view({'put': 'restore_store'}), name='admin-restore-store'),
     path("api/store/admin/edit-store/", views_store.StoreViewSet.as_view({'put': 'edit_store'}), name='admin-edit-store'),
     path("api/store/admin/get-detail-store/", views_store.StoreViewSet.as_view({'get': 'get_store'}), name='admin-get-detail-store'),
+    #public route
+    path("api/store/get-detail-store/", views_store.PublicStoreViewSet.as_view({'get': 'get_store'}), name='get-detail-store'),
 
     #product_store
     #--private route

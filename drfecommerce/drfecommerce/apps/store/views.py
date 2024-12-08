@@ -7,10 +7,11 @@ from django.core.paginator import EmptyPage
 from django.core.paginator import PageNotAnInteger
 from rest_framework.permissions import IsAuthenticated
 from drfecommerce.apps.my_admin.authentication import AdminSafeJWTAuthentication
-from rest_framework.decorators import action
+from rest_framework.decorators import action, permission_classes, authentication_classes
 from dotenv import load_dotenv
 from django.utils import timezone
 from django.db import models
+from rest_framework.permissions import AllowAny
 
 # Load environment variables from .env file
 load_dotenv()
@@ -242,3 +243,35 @@ class StoreViewSet(viewsets.ViewSet):
                 "stores": serializer.data
             }
         }, status=status.HTTP_200_OK)
+        
+@authentication_classes([])            
+@permission_classes([AllowAny])   
+class PublicStoreViewSet(viewsets.ViewSet):
+    """
+    ViewSet cho các thao tác với Store.
+    """
+    @action(detail=False, methods=['get'], url_path="get-detail-store")
+    def get_store(self, request):
+        """
+        API để lấy thông tin chi tiết của một Store: query_params
+        - id: int
+        """
+        store_id = request.query_params.get('store_id')
+        if not store_id:
+            return Response({
+                "status": status.HTTP_400_BAD_REQUEST,
+                "message": "Store ID is required."
+            })
+        
+        try:
+            store = Store.objects.get(id=store_id)
+            serializer = StoreSerializer(store)
+            return Response({
+                "status": status.HTTP_200_OK,
+                "data": serializer.data
+            }, status=status.HTTP_200_OK)
+        except Store.DoesNotExist:
+            return Response({
+                "status": status.HTTP_404_NOT_FOUND,
+                "message": "Store not found."
+            })
