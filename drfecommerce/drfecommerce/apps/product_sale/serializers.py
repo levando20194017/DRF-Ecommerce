@@ -8,6 +8,7 @@ class ProductSerializer(serializers.ModelSerializer):
         fields = '__all__'
         
 class ProductSaleSerializer(serializers.ModelSerializer):
+    product = ProductSerializer(read_only=True)  # Liên kết với ProductSerializer
     class Meta:
         model = ProductSale
         fields = '__all__'

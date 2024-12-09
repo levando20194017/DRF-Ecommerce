@@ -205,7 +205,7 @@ EMAIL_USE_TLS = True  # Set to True for TLS; False for SSL
 EMAIL_USE_SSL = False  # Set to True for TLS; False for SSL
 EMAIL_HOST_USER = os.environ.get("EMAIL")  # Your email address
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_PASSWORD")  # Your email password
-DEFAULT_FROM_EMAIL = 'VIVAFLOWER <no-reply@yourdomain.com>'
+DEFAULT_FROM_EMAIL = 'VIVAPHONE <no-reply@yourdomain.com>'
 ADMIN_EMAIL = 'levando20194017@gmail.com'  # Admin email for notifications
 
 #tích hợp thanh toán qua vnpay
