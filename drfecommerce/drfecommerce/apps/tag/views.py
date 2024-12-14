@@ -190,7 +190,7 @@ class TagViewSet(viewsets.ViewSet):
         page_index = int(request.GET.get('page_index', 1))
         page_size = int(request.GET.get('page_size', 10))
 
-        tags = Tag.objects.all()  # Chỉ lấy các tag chưa bị xóa mềm
+        tags = Tag.objects.all().order_by('-updated_at')  # Chỉ lấy các tag chưa bị xóa mềm
         paginator = Paginator(tags, page_size)
 
         try:
@@ -226,7 +226,7 @@ class TagViewSet(viewsets.ViewSet):
         page_size = int(request.GET.get('page_size', 10))
         name_query = request.GET.get('name', '').strip()
         
-        tags = Tag.objects.all()
+        tags = Tag.objects.all().order_by('-updated_at')
         # Lọc sản phẩm theo tên
         if name_query:
             tags = Tag.objects.filter(name__icontains=name_query)

@@ -210,7 +210,7 @@ class ProductIncomingViewSet(viewsets.ViewSet):
         end_date = request.GET.get('end_date', None)
 
         # Tạo queryset ban đầu
-        product_incomings = ProductIncoming.objects.all()
+        product_incomings = ProductIncoming.objects.all().order_by('-updated_at')
 
         # Lọc theo store nếu có truyền store_id
         if store_id:
@@ -300,7 +300,7 @@ class ProductIncomingViewSet(viewsets.ViewSet):
         product_name = request.GET.get('product_name', None)
 
         # Tạo queryset ban đầu
-        product_incomings = ProductIncoming.objects.all()
+        product_incomings = ProductIncoming.objects.all().order_by('-updated_at')
 
         # Lọc theo store nếu có truyền store_id
         if store_id:

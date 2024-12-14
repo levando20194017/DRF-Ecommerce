@@ -118,7 +118,8 @@ class OrderViewSet(viewsets.ViewSet):
                 total_cost += total_cost * gst_amount + shipping_cost
 
                 data['total_cost'] = total_cost
-                data['payment_methods'] = payment_method
+                data['payment_method'] = payment_method
+                
 
                 # guest = get_object_or_404(Guest, id=guest_id)
                 data['guest'] = guest_id
@@ -205,7 +206,11 @@ class OrderViewSet(viewsets.ViewSet):
                         return self.redirect_to_payment_gateway(request, order)
                     elif payment_method == "cash_on_delivery":
                         self.send_order_email_to_admin(order)
-                        return Response(serializer.data, status=status.HTTP_201_CREATED)
+                        return Response({
+                            "status": status.HTTP_201_CREATED,
+                            "messaga": "OK",
+                            "data": serializer.data    
+                            }, status=status.HTTP_201_CREATED)
 
                 return Response(serializer.errors)
         except ValueError as e:
@@ -441,7 +446,7 @@ class OrderViewSet(viewsets.ViewSet):
             })
 
         # Start building the query
-        orders = Order.objects.filter(guest=guest)
+        orders = Order.objects.filter(guest=guest).order_by("-updated_at")
         
         if order_status:
             orders = orders.filter(order_status=order_status) #filter by order

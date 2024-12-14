@@ -244,7 +244,7 @@ class PublicReviewViewset(viewsets.ViewSet):
         product_id = request.GET.get('product_id')
         store_id = request.GET.get('store_id')
 
-        reviews = Review.objects.filter(product_id=product_id, store_id = store_id)
+        reviews = Review.objects.filter(product_id=product_id, store_id = store_id).order_by('-updated_at')
           # Tính toán đánh giá trung bình
         average_rating = reviews.aggregate(average_rating=Avg('rating'))['average_rating'] or 0
         

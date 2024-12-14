@@ -37,7 +37,7 @@ class ProductViewSet(viewsets.ViewSet):
         page_index = int(request.GET.get('page_index', 1))
         page_size = int(request.GET.get('page_size', 10))
 
-        products = Product.objects.all()
+        products = Product.objects.all().order_by('-updated_at')
         paginator = Paginator(products, page_size)
 
         try:
@@ -406,7 +406,7 @@ class PublicProductViewset(viewsets.ViewSet):
         page_index = int(request.GET.get('page_index', 1))
         page_size = int(request.GET.get('page_size', 10))
 
-        products = Product.objects.filter(delete_at__isnull=True)
+        products = Product.objects.filter(delete_at__isnull=True).order_by('-updated_at')
         paginator = Paginator(products, page_size)
 
         try:
@@ -495,7 +495,7 @@ class PublicProductViewset(viewsets.ViewSet):
         catalog_ids = [cat.id for cat in all_catalogs]
 
         # Filter products by all catalog IDs
-        products = Product.objects.filter(catalog_id__in=catalog_ids, delete_at__isnull=True)
+        products = Product.objects.filter(catalog_id__in=catalog_ids, delete_at__isnull=True).order_by('-updated_at')
 
         # Apply pagination
         paginator = Paginator(products, page_size)
@@ -618,7 +618,7 @@ class PublicProductViewset(viewsets.ViewSet):
                     "message": "Promotion not found."
                 })
                 
-        products = Product.objects.filter(promotion_id = promotion_id, delete_at__isnull=True)
+        products = Product.objects.filter(promotion_id = promotion_id, delete_at__isnull=True).order_by('-updated_at')
         paginator = Paginator(products, page_size)
             
         try:
@@ -654,7 +654,7 @@ class PublicProductViewset(viewsets.ViewSet):
         name_query = request.GET.get('name')
         
         if name_query is None or name_query == "":
-            products = Product.objects.filter(delete_at__isnull=True)
+            products = Product.objects.filter(delete_at__isnull=True).order_by('-updated_at')
         else:
             products = Product.objects.filter(name__icontains=name_query, delete_at__isnull=True)
 

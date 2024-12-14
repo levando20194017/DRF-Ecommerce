@@ -80,7 +80,7 @@ class ProductStoreViewSet(viewsets.ModelViewSet):
                 "message": "Store not found."
             })
 
-        products = ProductStore.objects.filter(store=store)
+        products = ProductStore.objects.filter(store=store).order_by('-updated_at')
 
         paginator = Paginator(products, page_size)
 
@@ -127,7 +127,7 @@ class ProductStoreViewSet(viewsets.ModelViewSet):
                 "message": "Store not found."
             })
 
-        products = ProductStore.objects.filter(store=store)
+        products = ProductStore.objects.filter(store=store).order_by('-updated_at')
 
         # Lọc theo tên hoặc mã sản phẩm
         if product_name:

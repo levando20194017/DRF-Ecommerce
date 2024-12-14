@@ -33,7 +33,7 @@ class AdminProductSaleViewSet(viewsets.ViewSet):
         end_date = request.GET.get('end_date')
 
         # Start building the query
-        product_sales = ProductSale.objects.all()
+        product_sales = ProductSale.objects.all().order_by('-updated_at')
         if store_id:
             product_sales = product_sales.filter(store_id = store_id)
 
@@ -89,7 +89,7 @@ class AdminProductSaleViewSet(viewsets.ViewSet):
         store_id = request.GET.get('store_id')
 
         # Start building the query
-        product_sales = ProductSale.objects.all()
+        product_sales = ProductSale.objects.all().order_by('-updated_at')
 
         # Filter by store if provided
         if store_id:
@@ -134,7 +134,7 @@ class PublicProductSaleViewSet(viewsets.ViewSet):
         store_id = request.GET.get('store_id')
 
         # Lấy danh sách sản phẩm đã bán
-        product_sales = ProductSale.objects.all()
+        product_sales = ProductSale.objects.all().order_by('-updated_at')
 
         # Lọc theo cửa hàng (nếu có)
         if store_id:

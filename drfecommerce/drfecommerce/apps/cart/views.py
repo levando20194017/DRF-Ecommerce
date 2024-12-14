@@ -51,33 +51,43 @@ class CartViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['get'], url_path='my-cart')
     def get_cart_items(self, request):
         """
-        Get all items in the user's cart.
+        Get all items in the user's cart, sorted by updated_at.
         """        
         guest_id = request.query_params.get('id')
-        print(guest_id)
+
         if not guest_id:
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
                 "message": "Guest ID is required."
             })
-            
+                
         try: 
-            guest = Guest.objects.get(id = guest_id)
+            guest = Guest.objects.get(id=guest_id)
         except Guest.DoesNotExist:
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Guest not found."
             })
-        cart, created = Cart.objects.get_or_create(guest=guest)
-        serializer = CartSerializer(cart)
         
-        total_items = CartItem.objects.filter(cart=cart).count()
+        cart, created = Cart.objects.get_or_create(guest=guest)
+
+        # Lọc và sắp xếp các CartItem theo updated_at
+        cart_items_query = CartItem.objects.filter(cart=cart).order_by('-updated_at')
+
+        # Serialize cart
+        serializer = CartSerializer(cart)
+
+        # Đếm tổng số lượng mục
+        total_items = cart_items_query.count()
+
+        # Trả về response
         return Response({
             "status": status.HTTP_200_OK,
             "message": "Cart retrieved successfully.",
             "data": serializer.data,
             "total": total_items,
         }, status=status.HTTP_200_OK)
+
 
     @action(detail=False, methods=['post'], url_path='add-to-cart')
     def add_to_cart(self, request):

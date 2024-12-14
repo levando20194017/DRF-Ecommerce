@@ -250,7 +250,7 @@ class PromotionViewSet(viewsets.ViewSet):
         page_index = int(request.GET.get('page_index', 1))
         page_size = int(request.GET.get('page_size', 10))
 
-        promotions = Promotion.objects.all()  # Chỉ lấy các promotion chưa bị xóa mềm
+        promotions = Promotion.objects.all().order_by('-updated_at')  # Chỉ lấy các promotion chưa bị xóa mềm
         paginator = Paginator(promotions, page_size)
 
         try:
@@ -287,7 +287,7 @@ class PromotionViewSet(viewsets.ViewSet):
         name_query = request.GET.get('name', '').strip()
 
         # Lọc sản phẩm theo tên
-        promotions = Promotion.objects.filter(name__icontains=name_query)
+        promotions = Promotion.objects.filter(name__icontains=name_query).order_by('-updated_at')
 
         paginator = Paginator(promotions, page_size)
 
@@ -327,7 +327,7 @@ class PublicPromotionViewSet(viewsets.ViewSet):
         page_index = int(request.GET.get('page_index', 1))
         page_size = int(request.GET.get('page_size', 10))
 
-        promotions = Promotion.objects.filter(delete_at__isnull = True)  # Chỉ lấy các promotion chưa bị xóa mềm
+        promotions = Promotion.objects.filter(delete_at__isnull = True).order_by('-updated_at')  # Chỉ lấy các promotion chưa bị xóa mềm
         paginator = Paginator(promotions, page_size)
 
         try:
@@ -389,7 +389,7 @@ class PublicPromotionViewSet(viewsets.ViewSet):
         page_size = int(request.GET.get('page_size', 10))
         name_query = request.GET.get('name', '').strip()
         
-        promotions = Promotion.objects.filter(delete_at__isnull = True)
+        promotions = Promotion.objects.filter(delete_at__isnull = True).order_by('-updated_at')
         if name_query:
             # Lọc sản phẩm theo tên
             promotions = Promotion.objects.filter(name__icontains=name_query, delete_at__isnull = True)

@@ -60,7 +60,7 @@ class TransactionViewSet(viewsets.ViewSet):
         end_date = request.GET.get('end_date')
 
         # Lọc sản phẩm theo tên
-        transactions = Transaction.objects.all()
+        transactions = Transaction.objects.all().order_by('-updated_at')
         if name_query:
             transactions = Transaction.objects.filter(transaction_number__icontains=name_query) 
         if start_date and end_date:
