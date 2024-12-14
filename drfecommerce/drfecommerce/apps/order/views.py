@@ -354,7 +354,7 @@ class OrderViewSet(viewsets.ViewSet):
         try:
             # Get the order by its primary key (id)
             order = Order.objects.get(id=order_id)
-
+            order_details = OrderDetail.objects.filter(order=order)
             # Check if the order status is 'pending'
             if order.order_status == 'pending':
                 # Update the order status to 'cancel'
@@ -369,7 +369,8 @@ class OrderViewSet(viewsets.ViewSet):
                     message=f"Your order #{order.id} has been canceled.",  # Nội dung thông báo
                     related_object_id=order.id,  # Liên kết với mã đơn hàng
                     url=f"/order-status?order_id={order.id}",  # URL dẫn đến đơn hàng đã hủy
-                    total_cost = order.total_cost
+                    total_cost = order.total_cost,
+                    image=order_details[0].product.image
                 )
             
                 # Send email notification to the admin
@@ -649,6 +650,7 @@ class AdminOrderViewSet(viewsets.ViewSet):
 
                 # Update the order status
                 order.order_status = new_status
+                orderDetails = OrderDetail.objects.filter(order=order)
                 if order.order_status == "confirmed":
                     guest = order.guest  # Assuming the guest is related to the order
                     order.date_confirmed = timezone.now()
@@ -661,7 +663,8 @@ class AdminOrderViewSet(viewsets.ViewSet):
                         message=f"Your order #{order.id} has been confirmed.",  # Nội dung thông báo
                         related_object_id=order.id,  # Liên kết với mã đơn hàng
                         url=f"/order-status?order_id=/{order.id}",  # URL dẫn đến đơn hàng đã hủy
-                        total_cost = order.total_cost
+                        total_cost = order.total_cost,
+                        image=orderDetails[0].product.image
                     )
                 if order.order_status == "delivered":
                     guest = order.guest  # Assuming the guest is related to the order
@@ -674,7 +677,8 @@ class AdminOrderViewSet(viewsets.ViewSet):
                         message=f"Your order #{order.id} has been delivered. You can rate the product quality.",  # Nội dung thông báo
                         related_object_id=order.id,  # Liên kết với mã đơn hàng
                         url=f"/order-status?order_id={order.id}",  # URL dẫn đến đơn hàng đã hủy
-                        total_cost = order.total_cost
+                        total_cost = order.total_cost,
+                        image=orderDetails[0].product.image
                     )
                     
                 if order.order_status == "shipped":
@@ -689,7 +693,8 @@ class AdminOrderViewSet(viewsets.ViewSet):
                         message=f"Your order #{order.id} has been delivered to the carrier.",  # Nội dung thông báo
                         related_object_id=order.id,  # Liên kết với mã đơn hàng
                         url=f"/order-status?order_id={order.id}",  # URL dẫn đến đơn hàng đã hủy
-                        total_cost = order.total_cost
+                        total_cost = order.total_cost,
+                        image=orderDetails[0].product.image
                     )
                 
                 if order.order_status == "pending":
@@ -700,10 +705,20 @@ class AdminOrderViewSet(viewsets.ViewSet):
                     order.date_cancelled = None
                 
                 if order.order_status == "cancelled":
-                    order.date_cancelled = None
+                    order.date_cancelled = timezone.now()
+                    
+                    create_notification(
+                    guest=guest,  # Gửi đối tượng guest
+                    notification_type="order_update",  # Loại thông báo
+                    message=f"Your order #{order.id} has been canceled.",  # Nội dung thông báo
+                    related_object_id=order.id,  # Liên kết với mã đơn hàng
+                    url=f"/order-status?order_id={order.id}",  # URL dẫn đến đơn hàng đã hủy
+                    total_cost = order.total_cost,
+                    image=orderDetails[0].product.image
+                )
                     
                 if order.order_status == "returned":
-                    order.date_returned = None
+                    order.date_returned = timezone.now()
                     
                 order.save()
                 # Send notification email
@@ -844,6 +859,16 @@ def vnpay_return(request):
                     # Lấy chi tiết đơn hàng từ OrderDetail liên kết với Order
                     order_details_html = ""
                     order_details = OrderDetail.objects.filter(order=order)
+                    
+                    create_notification(
+                        guest=order.guest,  # Gửi đối tượng guest
+                        notification_type="order_update",  # Loại thông báo
+                        message=f"Your order #{order.id} has been pay successfully",  # Nội dung thông báo
+                        related_object_id=order.id,  # Liên kết với mã đơn hàng
+                        url=f"/order-status?order_id={order.id}",  # URL dẫn đến đơn hàng
+                        total_cost = order.total_cost,
+                        image = order_details[0].product.image
+                    )
 
                     # Lặp qua các chi tiết của đơn hàng và thêm chúng vào bảng HTML
                     for detail in order_details:
@@ -911,8 +936,28 @@ def vnpay_return(request):
                         recipient_list,
                         html_message=html_message  # Nội dung HTML
                     )
+                    
                 else:
-                    return render(request, "payment_return.html", {"title": "Kết quả thanh toán",
+                    order = Order.objects.get(id=order_id)
+                    order.order_status = 'cancelled'
+                    # order.order_status = 'confirmed'
+                    order.save()
+                    subject = f"New order #{order.id} - {order.recipient_name}"
+
+                    # Lấy chi tiết đơn hàng từ OrderDetail liên kết với Order
+                    order_details_html = ""
+                    order_details = OrderDetail.objects.filter(order=order)
+                    create_notification(
+                        guest=order.guest,  # Gửi đối tượng guest
+                        notification_type="order_update",  # Loại thông báo
+                        message=f"Your order #{order.id} has been pay failed",  # Nội dung thông báo
+                        related_object_id=order.id,  # Liên kết với mã đơn hàng
+                        url=f"/order-status?order_id={order.id}",  # URL dẫn đến đơn hàng
+                        total_cost = order.total_cost,
+                        image = order_details[0].product.image
+                    )
+                    
+                    return render(request, "vnpay/payment_return.html", {"title": "Kết quả thanh toán",
                                                                 "result": "Lỗi", "order_id": order_id,
                                                                 "amount": amount,
                                                                 "order_desc": order_desc,
