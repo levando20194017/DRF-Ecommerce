@@ -69,12 +69,14 @@ class CartViewSet(viewsets.ViewSet):
                 "message": "Guest not found."
             })
         cart, created = Cart.objects.get_or_create(guest=guest)
-
         serializer = CartSerializer(cart)
+        
+        total_items = CartItem.objects.filter(cart=cart).count()
         return Response({
             "status": status.HTTP_200_OK,
             "message": "Cart retrieved successfully.",
-            "data": serializer.data
+            "data": serializer.data,
+            "total": total_items,
         }, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['post'], url_path='add-to-cart')

@@ -67,6 +67,9 @@ class NotificationViewSet(viewsets.ViewSet):
             
         notifications = Notification.objects.filter(guest=guest).order_by("-created_at")
         
+        notificationUnread = Notification.objects.filter(guest_id=guest_id, is_read = False)
+        unread_count = notificationUnread.count()
+        
         paginator = Paginator(notifications, page_size)
 
         try:
@@ -84,6 +87,7 @@ class NotificationViewSet(viewsets.ViewSet):
             "data": {
                 "total_pages": paginator.num_pages,
                 "total_items": paginator.count,
+                "unread_count": unread_count,
                 "page_index": page_index,
                 "page_size": page_size,
                 "notifications": serializer.data
