@@ -10,7 +10,8 @@ load_dotenv()
 def generate_access_token(admin):
 
     access_token_payload = {
-        'admin_id': admin.id,
+        'email': admin.email,
+        'user_id': admin.id,
         'exp': datetime.datetime.utcnow() + datetime.timedelta(days=0, minutes=500),
         'iat': datetime.datetime.utcnow(),
     }
@@ -21,7 +22,7 @@ def generate_access_token(admin):
 
 def generate_refresh_token(admin):
     refresh_token_payload = {
-        'admin_id': admin.id,
+        'user_id': admin.id,
         'exp': datetime.datetime.utcnow() + datetime.timedelta(days=7),
         'iat': datetime.datetime.utcnow()
     }

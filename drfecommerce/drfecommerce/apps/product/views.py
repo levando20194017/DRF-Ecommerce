@@ -19,6 +19,7 @@ from django.core.files.base import ContentFile
 from drfecommerce.settings import base
 from django.db.models import Q
 from django.db.models import Min
+from drfecommerce.apps.guest.authentication import GuestSafeJWTAuthentication
 
 # Load environment variables from .env file
 load_dotenv()
@@ -678,4 +679,38 @@ class PublicProductViewset(viewsets.ViewSet):
                 "page_size": page_size,
                 "products": serializer.data
             }
+        }, status=status.HTTP_200_OK)
+class GuestProductViewset(viewsets.ViewSet):
+    authentication_classes = [GuestSafeJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+            
+    @action(detail=False, methods=['post'], url_path="upload-gallery")
+    def upload_gallery(self, request):
+        """
+        form-data: files
+        """
+        if 'files' not in request.FILES:
+            return Response({
+                "status": status.HTTP_400_BAD_REQUEST,
+                "message": "No image files found in request."
+            })
+
+        files = request.FILES.getlist('files')  # Lấy danh sách các file từ request
+        image_urls = []  # Danh sách lưu URL của các ảnh đã upload
+
+        for image in files:
+            img_name = image.name
+
+            # Sử dụng default_storage để lưu ảnh vào thư mục cục bộ hoặc dịch vụ lưu trữ khác trong tương lai
+            save_path = os.path.join(base.MEDIA_ROOT, img_name)
+            file_path = default_storage.save(save_path, ContentFile(image.read()))
+            file_url = default_storage.url(file_path)
+
+            # Lưu URL của ảnh vào danh sách
+            image_urls.append(file_url)
+
+        return Response({
+            "status": status.HTTP_200_OK,
+            "message": "Images uploaded successfully!",
+            "image_urls": image_urls  # Trả về danh sách các URL của ảnh đã upload
         }, status=status.HTTP_200_OK)

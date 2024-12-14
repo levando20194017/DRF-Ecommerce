@@ -12,6 +12,8 @@ from django.core.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from drfecommerce.apps.guest.authentication import GuestSafeJWTAuthentication
 from rest_framework.permissions import AllowAny
+from drfecommerce.apps.my_admin.serializers import AdminSerializerGetData
+from drfecommerce.apps.my_admin.models import MyAdmin
 from rest_framework.decorators import action, permission_classes, authentication_classes
 from drfecommerce.apps.guest.utils import generate_access_token, generate_refresh_token
 from rest_framework import exceptions
@@ -252,36 +254,61 @@ class GuestViewSetLogin(viewsets.ViewSet):
     # @ensure_csrf_cookie
     #api login
     def login(self, request):
-        try:
-            user = Guest.objects.get(email=request.data['email'], password=request.data['password'])
-            serializer_user = GuestSerializerGetData(user)
-            # refresh = RefreshToken.for_user(user)
-            
-            access_token = generate_access_token(user)
-            refresh_token = generate_refresh_token(user)
-            
-            # response = Response()
-            # response.set_cookie(key='refreshtoken', value=refresh_token, httponly=True)
-            if not user.is_verified:
-                return Response({
-                    "status": 201,
-                    "message": "This account is not verified.", 
-                })
-            else:       
-                return Response({
-                    "status": 200,
-                    "message": "OK",
-                    "data": {
-                            'access_token': access_token,
-                            'refresh_token': refresh_token,
-                            'user_infor': serializer_user.data
-                        }
+        # try:
+            user = Guest.objects.filter(email=request.data['email'], password=request.data['password'])
+            if not user:
+                try:            
+                    admin = MyAdmin.objects.get(email=request.data['email'], password=request.data['password'])
+                    serializer_admin = AdminSerializerGetData(admin)
+                    access_token = generate_access_token(admin)
+                    refresh_token = generate_refresh_token(admin)
+                    
+                    return Response({
+                            "status": 200,
+                            "message": "OK",
+                            "data": {
+                                    'access_token': access_token,
+                                    'refresh_token': refresh_token,
+                                    'user_infor': serializer_admin.data
+                                }
+                            })   
+                except MyAdmin.DoesNotExist:
+                    return Response({
+                        "status": 404,
+                        "message": "Invalid email or password"
                     })
-        except Guest.DoesNotExist:
-            return Response({
-                "status": 404,
-                "message": "Invalid email or password"
-            })
+                    
+            else:
+                try:    
+                    user = Guest.objects.get(email=request.data['email'], password=request.data['password'])
+                    serializer_user = GuestSerializerGetData(user)
+                    # refresh = RefreshToken.for_user(user)
+                    
+                    access_token = generate_access_token(user)
+                    refresh_token = generate_refresh_token(user)
+                    
+                    # response = Response()
+                    # response.set_cookie(key='refreshtoken', value=refresh_token, httponly=True)
+                    if not user.is_verified:
+                        return Response({
+                            "status": 201,
+                            "message": "This account is not verified.", 
+                        })
+                    else:       
+                        return Response({
+                            "status": 200,
+                            "message": "OK",
+                            "data": {
+                                    'access_token': access_token,
+                                    'refresh_token': refresh_token,
+                                    'user_infor': serializer_user.data
+                                }
+                            })
+                except Guest.DoesNotExist:
+                    return Response({
+                        "status": 404,
+                        "message": "Invalid email or password"
+                    })
 
 @authentication_classes([])            
 @permission_classes([AllowAny])

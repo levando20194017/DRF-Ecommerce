@@ -10,6 +10,7 @@ load_dotenv()
 def generate_access_token(user):
 
     access_token_payload = {
+        'email': user.email,
         'user_id': user.id,
         'exp': datetime.datetime.utcnow() + datetime.timedelta(days=0, minutes=500),
         'iat': datetime.datetime.utcnow(),

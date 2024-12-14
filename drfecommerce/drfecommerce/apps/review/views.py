@@ -189,7 +189,7 @@ class AdminReviewViewset(viewsets.ViewSet):
         """
         admin_id = request.data.get('admin_id')
         review_id = request.data.get('review_id')
-        reply = request.data.get('reply')
+        reply = request.data.get('comment')
         
         if not review_id:
             return Response({
@@ -218,9 +218,8 @@ class AdminReviewViewset(viewsets.ViewSet):
             notification_type="review_reply",  # Define your notification type
             message=f"Admin replied to your review: {reply}",  # Customize the message
             related_object_id=review.id,  # Link it to the review ID
-            url=f"/reviews/{review.id}"  # Optionally add a URL to the review
+            url=f"/store/product-detail?store_id={review.store.id}&product_id={review.product.id}&catalog_id={review.product.catalog.id}"  # Optionally add a URL to the review
         )
-        
         # Serialize and return the response
         serializer = ReviewReplySerializer(reply_review)
         return Response({

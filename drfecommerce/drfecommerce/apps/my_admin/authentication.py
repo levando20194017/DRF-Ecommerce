@@ -35,6 +35,7 @@ class AdminSafeJWTAuthentication(BaseAuthentication):
             access_token = authorization_header.split(' ')[1]
             payload = jwt.decode(
                 access_token, os.getenv('SECRET_KEY'), algorithms=['HS256'])
+            print(payload)
 
         except jwt.ExpiredSignatureError:
             raise exceptions.AuthenticationFailed('access_token expired')
@@ -42,7 +43,7 @@ class AdminSafeJWTAuthentication(BaseAuthentication):
             raise exceptions.AuthenticationFailed('Token prefix missing')
 
         try:
-            admin = MyAdmin.objects.filter(id=payload['admin_id']).first()
+            admin =  MyAdmin.objects.filter(id=payload['user_id'], email=payload['email']).first()
             if admin is None:
                 raise exceptions.AuthenticationFailed('Admin not found')
         except:

@@ -35,6 +35,9 @@ urlpatterns = [
     path("api/guests/register/", views_guest.GuestViewSetCreate.as_view({'post': 'create_guest'}), name='guest-register'),
     path("api/guests/change-information/", views_guest.GuestViewSetChangeInfor.as_view({'put': 'change_infor'}), name='change-information'),
     path("api/guests/change-avatar/", views_guest.GuestViewSetChangeInfor.as_view({'put': 'change_avatar'}), name='change-avatar'),
+    
+    path("api/product/upload-gallery/", views_product.GuestProductViewset.as_view({'post': 'upload_gallery'}), name='guest-upload-images'),
+    
     #cart && cartItem
     path("api/cart/guests/add-to-cart/", views_cart.CartViewSet.as_view({'post': 'add_to_cart'}), name='add-to-cart'),
     path("api/cart/guests/my-cart/", views_cart.CartViewSet.as_view({'get': 'get_cart_items'}), name='get-cart-items'),
