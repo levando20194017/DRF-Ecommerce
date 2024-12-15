@@ -216,7 +216,7 @@ class AdminReviewViewset(viewsets.ViewSet):
         create_notification(
             guest=review.guest,  # Assuming `review.guest` gets the guest/author
             notification_type="review_reply",  # Define your notification type
-            message=f"Admin replied to your review: {reply}",  # Customize the message
+            message=f"{reply}",  # Customize the message
             related_object_id=review.id,  # Link it to the review ID
             url=f"/store/product-detail?store_id={review.store.id}&product_id={review.product.id}&catalog_id={review.product.catalog.id}"  # Optionally add a URL to the review
         )
