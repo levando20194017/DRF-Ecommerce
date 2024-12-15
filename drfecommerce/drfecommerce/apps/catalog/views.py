@@ -43,7 +43,7 @@ class CatalogViewSetGetData(viewsets.ViewSet):
         search_term = request.GET.get('textSearch', '')
 
         # Lấy toàn bộ danh sách catalog
-        catalogs = Catalog.objects.all()
+        catalogs = Catalog.objects.all().order_by("-updated_at")
         
         if search_term:
             catalogs = catalogs.filter(name__icontains=search_term)
@@ -457,7 +457,7 @@ class PublicCatalogViewSetGetData(viewsets.ViewSet):
         search_term = request.GET.get('textSearch', '')
 
         # Lấy toàn bộ danh sách catalog
-        catalogs = Catalog.objects.filter(delete_at__isnull = True)
+        catalogs = Catalog.objects.filter(delete_at__isnull = True).order_by("-created_at")
         if search_term:
             catalogs = catalogs.filter(name__icontains=search_term)
 

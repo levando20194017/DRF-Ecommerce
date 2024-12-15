@@ -25,7 +25,7 @@ class GuestSafeJWTAuthentication(BaseAuthentication):
 
         # User = get_user_model()
         authorization_header = request.headers.get('Authorization')
-
+        
         if not authorization_header:
             return None
         try:

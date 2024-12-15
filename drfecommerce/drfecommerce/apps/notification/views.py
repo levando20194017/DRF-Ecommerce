@@ -15,7 +15,7 @@ from django.core.paginator import PageNotAnInteger
 
 def create_notification(
     guest, notification_type, message, 
-    related_object_id=None, url=None, attachment_url = None):
+    related_object_id=None, url=None, attachment_url = None, total_cost = 0, image = None ):
     """
     Hàm tiện ích để tạo thông báo
     :param recipient: Người nhận thông báo (Guest)
@@ -32,7 +32,9 @@ def create_notification(
         message=message,
         related_object_id=related_object_id,
         url=url,
-        attachment_url = attachment_url
+        attachment_url = attachment_url,
+        total_cost = total_cost,
+        image = image
     )
 
 class NotificationViewSet(viewsets.ViewSet):
@@ -46,7 +48,7 @@ class NotificationViewSet(viewsets.ViewSet):
         - page_index: The index of the page (default is 1).
         - page_size: The number of items per page (default is 10).
         """
-        guest_id = request.GET.get('guest_id')
+        guest_id = request.GET.get('id')
         page_index = int(request.GET.get('page_index', 1))
         page_size = int(request.GET.get('page_size', 10))
         if not guest_id:
@@ -63,7 +65,10 @@ class NotificationViewSet(viewsets.ViewSet):
                 "message": "Guest not found."
             })
             
-        notifications = Notification.objects.filter(guest=guest)
+        notifications = Notification.objects.filter(guest=guest).order_by("-created_at")
+        
+        notificationUnread = Notification.objects.filter(guest_id=guest_id, is_read = False)
+        unread_count = notificationUnread.count()
         
         paginator = Paginator(notifications, page_size)
 
@@ -82,6 +87,7 @@ class NotificationViewSet(viewsets.ViewSet):
             "data": {
                 "total_pages": paginator.num_pages,
                 "total_items": paginator.count,
+                "unread_count": unread_count,
                 "page_index": page_index,
                 "page_size": page_size,
                 "notifications": serializer.data
@@ -118,4 +124,18 @@ class NotificationViewSet(viewsets.ViewSet):
         return Response({
             "status": status.HTTP_200_OK,
             "message": "Seen this notification",
+        }, status=status.HTTP_200_OK)
+        
+    @action(detail=False, methods=['get'], url_path="count-unread")
+    def count_unread_notifications(self, request):
+        """
+        API đếm số thông báo chưa đọc.
+        """
+        guest_id = request.GET.get('id')
+        notification = Notification.objects.filter(guest_id=guest_id, is_read = False)
+        unread_count = notification.count()
+        return Response({
+            "status": status.HTTP_200_OK,
+            "message": "Counted unread notifications.",
+            "unread_count": unread_count
         }, status=status.HTTP_200_OK)

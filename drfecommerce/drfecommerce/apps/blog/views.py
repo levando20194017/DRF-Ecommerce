@@ -315,7 +315,7 @@ class BlogViewSet(viewsets.ViewSet):
         tag_query = request.GET.get('tag', '').strip()
 
         # Start with all blogs
-        blogs = Blog.objects.all()
+        blogs = Blog.objects.all().order_by("-updated_at")
         # Filter by name if provided
         if name_query:
             blogs = blogs.filter(name__icontains=name_query)

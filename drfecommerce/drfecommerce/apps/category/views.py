@@ -205,7 +205,7 @@ class CategoryViewSet(viewsets.ViewSet):
         name_query = request.GET.get('name', '').strip()
 
         # Lọc sản phẩm theo tên
-        categorys = Category.objects.all()
+        categorys = Category.objects.all().order_by('-updated_at')
         if name_query:
             categorys = Category.objects.filter(name__icontains=name_query)
 

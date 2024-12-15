@@ -1,5 +1,4 @@
 from rest_framework import status, viewsets
-from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.utils import timezone
 from drfecommerce.apps.product.models import Product
@@ -8,6 +7,10 @@ from drfecommerce.apps.product_store.models import ProductStore
 from .models import ProductIncoming
 from .serializers import ProductIncomingSerializer,ProductIncomingDetailSerializer
 from drfecommerce.apps.product_store.serializers import ProductStoreSerializer
+from drfecommerce.apps.product.serializers import ProductSerializer
+from drfecommerce.apps.store.serializers import StoreSerializer
+from drfecommerce.apps.catalog.models import Catalog
+from drfecommerce.apps.review.models import Review
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from drfecommerce.apps.my_admin.authentication import AdminSafeJWTAuthentication
 from django.core.paginator import Paginator
@@ -15,6 +18,8 @@ from django.core.paginator import EmptyPage
 from django.core.paginator import PageNotAnInteger
 from django.utils.dateparse import parse_datetime
 from django.db.models import Sum
+from django.db.models import Avg
+from rest_framework.decorators import action, permission_classes, authentication_classes
 
 class ProductIncomingViewSet(viewsets.ViewSet):
     authentication_classes = [AdminSafeJWTAuthentication]
@@ -210,7 +215,7 @@ class ProductIncomingViewSet(viewsets.ViewSet):
         end_date = request.GET.get('end_date', None)
 
         # Tạo queryset ban đầu
-        product_incomings = ProductIncoming.objects.all()
+        product_incomings = ProductIncoming.objects.all().order_by('-updated_at')
 
         # Lọc theo store nếu có truyền store_id
         if store_id:
@@ -300,7 +305,7 @@ class ProductIncomingViewSet(viewsets.ViewSet):
         product_name = request.GET.get('product_name', None)
 
         # Tạo queryset ban đầu
-        product_incomings = ProductIncoming.objects.all()
+        product_incomings = ProductIncoming.objects.all().order_by('-updated_at')
 
         # Lọc theo store nếu có truyền store_id
         if store_id:
@@ -376,5 +381,103 @@ class ProductIncomingViewSet(viewsets.ViewSet):
             "message": "Expenditure statistics retrieved successfully.",
             "data": {
                 "total_expenditure": expenditures.get('total_cost', 0)
+            }
+        }, status=status.HTTP_200_OK)
+
+@authentication_classes([])            
+@permission_classes([AllowAny])
+class PublicProductIncomingVIewSet(viewsets.ViewSet):
+    
+    @action(detail=False, methods=['get'], url_path="get-list-product-incoming-by-catalog")
+    def list_product_incoming_by_catalog(self, request):
+        """
+        api lấy danh sách sản phẩm đã nhập vào kho theo catalog
+        API to get list of product incoming by catalog (including sub-catalogs) with pagination.
+        - page_index (default=1)
+        - page_size (default=10)
+        - catalog_id: int
+        example api/get-list-product-incoming-by-catalog/?page_index=1&page_size=10&catalog_id=1
+        """
+        page_index = int(request.GET.get('page_index', 1))
+        page_size = int(request.GET.get('page_size', 10))
+        catalog_id = request.GET.get('catalog_id')
+        store_id = request.GET.get('store_id')
+
+        if not catalog_id:
+            return Response({
+                "status": status.HTTP_400_BAD_REQUEST,
+                "message": "Catalog ID is required."
+            })
+
+        try:
+            catalog = Catalog.objects.get(id=catalog_id, delete_at__isnull=True)
+        except Catalog.DoesNotExist:
+            return Response({
+                "status": status.HTTP_404_NOT_FOUND,
+                "message": "Catalog not found."
+            })
+
+        # Get all related catalogs (including the given catalog itself)
+        def get_child_catalogs(parent_catalog):
+            children = Catalog.objects.filter(parent_id=parent_catalog, delete_at__isnull=True)
+            result = list(children)
+            for child in children:
+                result.extend(get_child_catalogs(child))
+            return result
+
+        all_catalogs = [catalog] + get_child_catalogs(catalog)
+        catalog_ids = [cat.id for cat in all_catalogs]
+
+        # Filter ProductIncoming by all catalog IDs
+        product_incoming = ProductIncoming.objects.filter(
+            product__catalog_id__in=catalog_ids,
+            delete_at__isnull=True
+        ).order_by('-updated_at')
+        
+        if store_id:
+            product_incoming = product_incoming.filter(store = store_id)
+
+        # Add remaining_stock from ProductStore and average rating from Review
+        product_data = []
+        for incoming in product_incoming:
+            # Get remaining stock from ProductStore
+            product_store = ProductStore.objects.filter(
+                product=incoming.product, 
+                store=incoming.store,
+                delete_at__isnull=True
+            ).first()
+            
+            # Calculate the average rating for the product
+            avg_rating = Review.objects.filter(product=incoming.product).aggregate(Avg('rating'))['rating__avg']
+            avg_rating = avg_rating if avg_rating is not None else 0
+
+            product_serializer = ProductSerializer(incoming.product)
+            store_serializer = StoreSerializer(incoming.store)
+            product_data.append({
+                "product": product_serializer.data,
+                "store": store_serializer.data,
+                "remaining_stock": product_store.remaining_stock if product_store else 0,
+                "avg_rating": avg_rating  # Add average rating to the response
+            })
+
+        # Apply pagination
+        paginator = Paginator(product_data, page_size)
+        try:
+            paginated_products = paginator.page(page_index)
+        except PageNotAnInteger:
+            paginated_products = paginator.page(1)
+        except EmptyPage:
+            paginated_products = paginator.page(paginator.num_pages)
+
+        # Serialize data
+        return Response({
+            "status": status.HTTP_200_OK,
+            "message": "OK",
+            "data": {
+                "total_pages": paginator.num_pages,
+                "total_items": paginator.count,
+                "page_index": page_index,
+                "page_size": page_size,
+                "products": list(paginated_products)
             }
         }, status=status.HTTP_200_OK)

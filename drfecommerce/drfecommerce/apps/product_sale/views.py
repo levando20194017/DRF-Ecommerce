@@ -2,6 +2,7 @@ from rest_framework import viewsets, status
 from rest_framework.response import Response
 from .serializers import ProductSaleSerializer, ProductReportSaleSerializer
 from drfecommerce.apps.product_sale.models import ProductSale
+from drfecommerce.apps.product_store.models import ProductStore
 from drfecommerce.apps.product.models import Product
 from drfecommerce.apps.product.serializers import ProductSerializer
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -33,7 +34,7 @@ class AdminProductSaleViewSet(viewsets.ViewSet):
         end_date = request.GET.get('end_date')
 
         # Start building the query
-        product_sales = ProductSale.objects.all()
+        product_sales = ProductSale.objects.all().order_by('-updated_at')
         if store_id:
             product_sales = product_sales.filter(store_id = store_id)
 
@@ -89,7 +90,7 @@ class AdminProductSaleViewSet(viewsets.ViewSet):
         store_id = request.GET.get('store_id')
 
         # Start building the query
-        product_sales = ProductSale.objects.all()
+        product_sales = ProductSale.objects.all().order_by('-updated_at')
 
         # Filter by store if provided
         if store_id:
@@ -134,7 +135,7 @@ class PublicProductSaleViewSet(viewsets.ViewSet):
         store_id = request.GET.get('store_id')
 
         # Lấy danh sách sản phẩm đã bán
-        product_sales = ProductSale.objects.all()
+        product_sales = ProductSale.objects.all().order_by('-updated_at')
 
         # Lọc theo cửa hàng (nếu có)
         if store_id:
@@ -154,11 +155,17 @@ class PublicProductSaleViewSet(viewsets.ViewSet):
         ).order_by('-total_quantity_sold')  # Sắp xếp theo số lượng bán được nhiều nhất
 
         # Nếu danh sách sản phẩm đã bán rỗng, lấy danh sách mặc định từ bảng Product
-        if not product_sales.exists():
-            products = Product.objects.all()
-            products = products.order_by('-updated_at')
+        if len(product_sales) < 4:
+            productStore = ProductStore.objects.filter(store=store_id).order_by('-updated_at')
             # Áp dụng phân trang cho sản phẩm
-            paginator = Paginator(products, page_size)
+            
+            
+            product_data = []
+            for product_store in productStore:
+                product = product_store.product
+                product_data.append(product)
+            
+            paginator = Paginator(product_data, page_size)
             try:
                 paginated_products = paginator.page(page_index)
             except PageNotAnInteger:
@@ -181,16 +188,20 @@ class PublicProductSaleViewSet(viewsets.ViewSet):
             }, status=status.HTTP_200_OK)
 
         # Áp dụng phân trang cho danh sách sản phẩm đã bán
-        paginator = Paginator(product_sales, page_size)
-        try:
-            paginated_product_sales = paginator.page(page_index)
-        except PageNotAnInteger:
-            paginated_product_sales = paginator.page(1)
-        except EmptyPage:
-            paginated_product_sales = paginator.page(paginator.num_pages)
+        product_ids = [item['product__id'] for item in product_sales]
+        products = Product.objects.filter(id__in=product_ids).order_by('-updated_at')
 
-        # Serialize dữ liệu sản phẩm đã bán
-        serializer = ProductReportSaleSerializer(paginated_product_sales, many=True)
+        # Áp dụng phân trang
+        paginator = Paginator(products, page_size)
+        try:
+            paginated_products = paginator.page(page_index)
+        except PageNotAnInteger:
+            paginated_products = paginator.page(1)
+        except EmptyPage:
+            paginated_products = paginator.page(paginator.num_pages)
+
+        # Serialize danh sách sản phẩm
+        serializer = ProductSerializer(paginated_products, many=True)
 
         return Response({
             "status": status.HTTP_200_OK,
@@ -200,7 +211,7 @@ class PublicProductSaleViewSet(viewsets.ViewSet):
                 "total_items": paginator.count,
                 "page_index": page_index,
                 "page_size": page_size,
-                "product_sales": serializer.data
+                "products": serializer.data
             }
         }, status=status.HTTP_200_OK)
 

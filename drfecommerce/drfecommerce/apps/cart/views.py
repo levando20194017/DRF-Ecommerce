@@ -51,30 +51,43 @@ class CartViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['get'], url_path='my-cart')
     def get_cart_items(self, request):
         """
-        Get all items in the user's cart.
+        Get all items in the user's cart, sorted by updated_at.
         """        
-        guest_id = request.data.get('id')
+        guest_id = request.query_params.get('id')
+
         if not guest_id:
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
                 "message": "Guest ID is required."
             })
-            
+                
         try: 
-            guest = Guest.objects.get(id = guest_id)
+            guest = Guest.objects.get(id=guest_id)
         except Guest.DoesNotExist:
             return Response({
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Guest not found."
             })
+        
         cart, created = Cart.objects.get_or_create(guest=guest)
 
+        # Lọc và sắp xếp các CartItem theo updated_at
+        cart_items_query = CartItem.objects.filter(cart=cart).order_by('-updated_at')
+
+        # Serialize cart
         serializer = CartSerializer(cart)
+
+        # Đếm tổng số lượng mục
+        total_items = cart_items_query.count()
+
+        # Trả về response
         return Response({
             "status": status.HTTP_200_OK,
             "message": "Cart retrieved successfully.",
-            "data": serializer.data
+            "data": serializer.data,
+            "total": total_items,
         }, status=status.HTTP_200_OK)
+
 
     @action(detail=False, methods=['post'], url_path='add-to-cart')
     def add_to_cart(self, request):
@@ -85,11 +98,13 @@ class CartViewSet(viewsets.ViewSet):
         - store_id: id of store
         - product_id: int
         - quantity: int (optional, default=1)
+        - color: string
         """
         product_id = request.data.get('product_id')
         quantity = request.data.get('quantity', 1)
         guest_id = request.data.get('id')
         store_id = request.data.get('store_id')
+        color = request.data.get('color')
         
         try: 
             guest = Guest.objects.get(id = guest_id)
@@ -118,7 +133,7 @@ class CartViewSet(viewsets.ViewSet):
         # Kiểm tra nếu giỏ hàng đã tồn tại, nếu không sẽ tạo giỏ hàng mới
         cart, created = Cart.objects.get_or_create(guest=guest)
         # Kiểm tra nếu sản phẩm đã có trong giỏ hàng, nếu có thì cập nhật số lượng
-        cart_item, created = CartItem.objects.get_or_create(cart=cart, product=product, store = store)
+        cart_item, created = CartItem.objects.get_or_create(cart=cart, product=product, store = store, color = color)
 
         if not created:
             # Nếu sản phẩm đã có trong giỏ hàng, tăng số lượng sản phẩm
@@ -127,6 +142,7 @@ class CartViewSet(viewsets.ViewSet):
             cart_item.save()
         else:
             cart_item.quantity = quantity
+            cart_item.color = color
             cart_item.save()
 
         return Response({

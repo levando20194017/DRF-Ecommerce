@@ -1,5 +1,7 @@
 from rest_framework import serializers
 from .models import Review, ReviewReply
+from drfecommerce.apps.guest.serializers import GuestSerializerGetData
+from drfecommerce.apps.product.serializers import ProductSerializer
 
 class ReviewReplySerializer(serializers.ModelSerializer):
     class Meta:
@@ -12,7 +14,9 @@ class ReviewSerializer(serializers.ModelSerializer):
         fields = '__all__'
         
 class GetAllReviewSerializer(serializers.ModelSerializer):
-    replies = ReviewReplySerializer(many=True, read_only=True)
+    replies = ReviewReplySerializer(many=True, read_only=True, source='reviewreply_set') 
+    guest = GuestSerializerGetData(read_only=True)
+    product = ProductSerializer(read_only=True)
 
     class Meta:
         model = Review

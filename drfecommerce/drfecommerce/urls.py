@@ -20,6 +20,7 @@ from drfecommerce.apps.product_incoming import views as views_product_incoming
 from drfecommerce.apps.product_sale import views as views_product_sale
 from drfecommerce.apps.product_store import views as views_product_store
 from drfecommerce.apps.notification import views as views_notification
+from drfecommerce.apps.contact import views as views_contact
 from drfecommerce.settings import base
 from django.conf.urls.static import static
 
@@ -33,7 +34,10 @@ urlpatterns = [
     path("api/guests/guest-information/<int:id>/", views_guest.GuestViewSetGetData.as_view({'get': 'detail_guest'}), name='guest-information'),
     path("api/guests/register/", views_guest.GuestViewSetCreate.as_view({'post': 'create_guest'}), name='guest-register'),
     path("api/guests/change-information/", views_guest.GuestViewSetChangeInfor.as_view({'put': 'change_infor'}), name='change-information'),
-    path("api/guests/change-avatar/", views_guest.ChangeAvatarAPI.as_view({'put': 'change_avatar'}), name='change-avatar'),
+    path("api/guests/change-avatar/", views_guest.GuestViewSetChangeInfor.as_view({'put': 'change_avatar'}), name='change-avatar'),
+    
+    path("api/product/upload-gallery/", views_product.GuestProductViewset.as_view({'post': 'upload_gallery'}), name='guest-upload-images'),
+    
     #cart && cartItem
     path("api/cart/guests/add-to-cart/", views_cart.CartViewSet.as_view({'post': 'add_to_cart'}), name='add-to-cart'),
     path("api/cart/guests/my-cart/", views_cart.CartViewSet.as_view({'get': 'get_cart_items'}), name='get-cart-items'),
@@ -132,12 +136,14 @@ urlpatterns = [
     path("api/product_incoming/admin/search_product_incomings/", views_product_incoming.ProductIncomingViewSet.as_view({'get': 'search_product_incomings'}), name='admin-search-product-incomings'),
     path("api/product_incoming/admin/expenditure-statistics/", views_product_incoming.ProductIncomingViewSet.as_view({'get': 'expenditure_statistics'}), name='admin-get-expenditure-statistics'),
     
+    path("api/product_incoming/get-list-product-incoming-by-catalog/", views_product_incoming.PublicProductIncomingVIewSet.as_view({'get': 'list_product_incoming_by_catalog'}), name='get-list-product-incomings-by-catalog'),
+    
     #product_sale (Liên quan đến sản phẩm đã bán, thống kê nó)
     #thống kê của cửa hàng theo ngày. các số lượng đã bán
     path("api/product_sale/admin/get-all-products-sale/", views_product_sale.AdminProductSaleViewSet.as_view({'get': 'get_all_products_sale'}), name='admin-get-all-products-sale'),
     path("api/product_sale/admin/get-total-report/", views_product_sale.AdminProductSaleViewSet.as_view({'get': 'get_total_report'}), name='get-total-report'),
     #thống kê sản phẩm đã bán (số lượng đã bán trên mỗi sản phẩm)
-    path("api/product_sale/admin/get-list-sold-products-filter/", views_product_sale.PublicProductSaleViewSet.as_view({'get': 'list_sold_products_filter'}), name='admin-get-list-sold-product-filter'),
+    path("api/product_sale/get-list-sold-products-filter/", views_product_sale.PublicProductSaleViewSet.as_view({'get': 'list_sold_products_filter'}), name='get-list-sold-product-filter'),
     
     #store
     #--private route
@@ -148,6 +154,8 @@ urlpatterns = [
     path("api/store/admin/restore-store/", views_store.StoreViewSet.as_view({'put': 'restore_store'}), name='admin-restore-store'),
     path("api/store/admin/edit-store/", views_store.StoreViewSet.as_view({'put': 'edit_store'}), name='admin-edit-store'),
     path("api/store/admin/get-detail-store/", views_store.StoreViewSet.as_view({'get': 'get_store'}), name='admin-get-detail-store'),
+    #public route
+    path("api/store/get-detail-store/", views_store.PublicStoreViewSet.as_view({'get': 'get_store'}), name='get-detail-store'),
 
     #product_store
     #--private route
@@ -158,13 +166,18 @@ urlpatterns = [
     path("api/product_store/search-stores-has-product/", views_product_store.PublicProductStoreViewSet.as_view({'get': 'search_stores_by_product'}), name='search-stores-has-product'),
     #api hiển thị thông tin chi tiết bao gồm product và store
     path("api/product_store/detail-of-product-and-store/", views_product_store.PublicProductStoreViewSet.as_view({'get': 'detail_product_store'}), name='detail-product-and-store'),
-    
+    #api tìm kiếm các sản phẩm có trong cửa hàng
+    path("api/product_store/search-products-in-store/", views_product_store.PublicProductStoreViewSet.as_view({'get': 'search_products_in_store'}), name='search-list-products-in-store'),
+    #api tìm kiếm các sản phẩm trong cửa hàng theo catalog
+    path("api/product_store/search-products-in-store-by-catalog/", views_product_store.PublicProductStoreViewSet.as_view({'get': 'search_products_in_store_by_catalog'}), name='search-list-products-in-store-by-catalog'),
     #order
     #--private route
     path("api/order/create-new-order/", views_order.OrderViewSet.as_view({'post': 'create_new_order'}), name='create-new-order'),
     path("api/order/cancel-order/", views_order.OrderViewSet.as_view({'put': 'cancel_order'}), name='cancel-order'),
     path("api/order/get-list-orders/", views_order.OrderViewSet.as_view({'get': 'list_orders'}), name='get-list-orders'),
     path("api/order/get-order-detail/", views_order_detail.OrderDetailViewSet.as_view({'get': 'get_order_detail'}), name='get-order-detail'),
+    
+    path("api/order/admin/get-order-detail/", views_order_detail.AdminOrderDetailViewSet.as_view({'get': 'get_order_detail'}), name='admin-get-order-detail'),
     path("api/order/admin/get-list-orders/", views_order.AdminOrderViewSet.as_view({'get': 'list_orders'}), name='admin-get-list-orders'),
     path("api/order/admin/update-order-status/", views_order.AdminOrderViewSet.as_view({'put': 'update_order_status'}), name='admin-update-order-status'),
     path("api/order/admin/update-payment-status/", views_order.AdminOrderViewSet.as_view({'put': 'update_payment_status'}), name='admin-update-payment-status'),
@@ -187,6 +200,12 @@ urlpatterns = [
     #notifications
     path("api/notification/get-list-notifications/", views_notification.NotificationViewSet.as_view({'get': 'list_notifications'}), name='get-list-notifications'),
     path("api/notification/read-notification/", views_notification.NotificationViewSet.as_view({'put': 'read_notification'}), name='read-notification'),
+    path("api/notification/count-unread-notifications/", views_notification.NotificationViewSet.as_view({'get': 'count_unread_notifications'}), name='count-unread-notifications'),
+    
+    path("api/contact/create-new-contact/", views_contact.ContactViewSet.as_view({'post': 'create_contact'}), name='create-new-contact'),
+    path("api/contact/admin/search-contacts/", views_contact.AdminContactViewSet.as_view({'get': 'search_contacts'}), name='search-contacts'),
+    path("api/contact/admin/delete-contact/", views_contact.AdminContactViewSet.as_view({'delete': 'delete_contact'}), name='delete-contact'),
+    path("api/contact/admin/update-advised-status/", views_contact.AdminContactViewSet.as_view({'patch': 'update_advised_status'}), name='update-advised-status'),
     
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/schema/docs", SpectacularSwaggerView.as_view(url_name="schema")),

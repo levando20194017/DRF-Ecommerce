@@ -19,6 +19,7 @@ from django.core.files.base import ContentFile
 from drfecommerce.settings import base
 from django.db.models import Q
 from django.db.models import Min
+from drfecommerce.apps.guest.authentication import GuestSafeJWTAuthentication
 
 # Load environment variables from .env file
 load_dotenv()
@@ -36,7 +37,7 @@ class ProductViewSet(viewsets.ViewSet):
         page_index = int(request.GET.get('page_index', 1))
         page_size = int(request.GET.get('page_size', 10))
 
-        products = Product.objects.all()
+        products = Product.objects.all().order_by('-updated_at')
         paginator = Paginator(products, page_size)
 
         try:
@@ -405,7 +406,7 @@ class PublicProductViewset(viewsets.ViewSet):
         page_index = int(request.GET.get('page_index', 1))
         page_size = int(request.GET.get('page_size', 10))
 
-        products = Product.objects.filter(delete_at__isnull=True)
+        products = Product.objects.filter(delete_at__isnull=True).order_by('-updated_at')
         paginator = Paginator(products, page_size)
 
         try:
@@ -494,7 +495,7 @@ class PublicProductViewset(viewsets.ViewSet):
         catalog_ids = [cat.id for cat in all_catalogs]
 
         # Filter products by all catalog IDs
-        products = Product.objects.filter(catalog_id__in=catalog_ids, delete_at__isnull=True)
+        products = Product.objects.filter(catalog_id__in=catalog_ids, delete_at__isnull=True).order_by('-updated_at')
 
         # Apply pagination
         paginator = Paginator(products, page_size)
@@ -617,7 +618,7 @@ class PublicProductViewset(viewsets.ViewSet):
                     "message": "Promotion not found."
                 })
                 
-        products = Product.objects.filter(promotion_id = promotion_id, delete_at__isnull=True)
+        products = Product.objects.filter(promotion_id = promotion_id, delete_at__isnull=True).order_by('-updated_at')
         paginator = Paginator(products, page_size)
             
         try:
@@ -653,7 +654,7 @@ class PublicProductViewset(viewsets.ViewSet):
         name_query = request.GET.get('name')
         
         if name_query is None or name_query == "":
-            products = Product.objects.filter(delete_at__isnull=True)
+            products = Product.objects.filter(delete_at__isnull=True).order_by('-updated_at')
         else:
             products = Product.objects.filter(name__icontains=name_query, delete_at__isnull=True)
 
@@ -678,4 +679,38 @@ class PublicProductViewset(viewsets.ViewSet):
                 "page_size": page_size,
                 "products": serializer.data
             }
+        }, status=status.HTTP_200_OK)
+class GuestProductViewset(viewsets.ViewSet):
+    authentication_classes = [GuestSafeJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+            
+    @action(detail=False, methods=['post'], url_path="upload-gallery")
+    def upload_gallery(self, request):
+        """
+        form-data: files
+        """
+        if 'files' not in request.FILES:
+            return Response({
+                "status": status.HTTP_400_BAD_REQUEST,
+                "message": "No image files found in request."
+            })
+
+        files = request.FILES.getlist('files')  # Lấy danh sách các file từ request
+        image_urls = []  # Danh sách lưu URL của các ảnh đã upload
+
+        for image in files:
+            img_name = image.name
+
+            # Sử dụng default_storage để lưu ảnh vào thư mục cục bộ hoặc dịch vụ lưu trữ khác trong tương lai
+            save_path = os.path.join(base.MEDIA_ROOT, img_name)
+            file_path = default_storage.save(save_path, ContentFile(image.read()))
+            file_url = default_storage.url(file_path)
+
+            # Lưu URL của ảnh vào danh sách
+            image_urls.append(file_url)
+
+        return Response({
+            "status": status.HTTP_200_OK,
+            "message": "Images uploaded successfully!",
+            "image_urls": image_urls  # Trả về danh sách các URL của ảnh đã upload
         }, status=status.HTTP_200_OK)

@@ -18,33 +18,32 @@ from django.db.models import Avg
 class ReviewViewSet(viewsets.ViewSet):
     authentication_classes = [GuestSafeJWTAuthentication]
     permission_classes = [IsAuthenticated]
-    @action(detail=False, methods=['post'], url_path="guest-review")
     def guest_review(self, request):
-        # Lấy thông tin từ request
         """
-        request body data
+        API body:
         - guest_id: int
-        - order_detail_id: int
         - product_id: int
+        - store_id: int (optional)
         - rating: int (1 <= rating <= 5)
-        - comment: string
-        - gallery: string
+        - comment: string (optional)
+        - gallery: string (optional)
         """
-        
+
         guest_id = request.data.get('guest_id')
-        order_detail_id = request.data.get('order_detail_id')
         product_id = request.data.get('product_id')
         store_id = request.data.get('store_id')
         rating = request.data.get('rating')
         comment = request.data.get('comment', '')
         gallery = request.data.get('gallery', '')
 
-        if not guest_id:
+        # Kiểm tra thông tin bắt buộc
+        if not guest_id or not product_id or not rating:
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
-                "message": "Guest ID is required."
+                "message": "guest_id, product_id, and rating are required."
             })
 
+        # Kiểm tra tồn tại của Guest
         try:
             guest = Guest.objects.get(id=guest_id)
         except Guest.DoesNotExist:
@@ -52,43 +51,44 @@ class ReviewViewSet(viewsets.ViewSet):
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": "Guest not found."
             })
-        # Kiểm tra xem OrderDetail có tồn tại hay không
-        try:
-            order_detail = OrderDetail.objects.get(id=order_detail_id, product_id=product_id, order__guest=guest)
-        except OrderDetail.DoesNotExist:
-            return Response({'error': 'Invalid order detail or product.',
-                             'status': 400})
-        
-        # Kiểm tra trạng thái của order
-        if order_detail.order.order_status != 'delivered':
-            return Response({'error': 'You can only review a product after the order has been delivered.',
-                             'status': 403
-                             })
-        
-        #Kiểm tra xem người dùng đã đánh giá sản phẩm này trong order này chưa
-        if Review.objects.filter(guest=guest, order_detail=order_detail, product_id=product_id).exists():
-            return Response({'error': 'You have already submitted a review for this product in this order.',
-                             'status': 400
-                             })
-        
+
+        # Kiểm tra lịch sử đặt hàng của sản phẩm
+        order_details = OrderDetail.objects.filter(
+            product_id=product_id,
+            order__guest=guest,
+            order__order_status='delivered'
+        )
+
+        if not order_details.exists():
+            return Response({
+                "status": status.HTTP_403_FORBIDDEN,
+                "message": "You can only review products that are part of an order marked as 'delivered'."
+            })
+
+        # Kiểm tra xem người dùng đã đánh giá sản phẩm này chưa
+        if Review.objects.filter(guest=guest, product_id=product_id).exists():
+            return Response({
+                "status": status.HTTP_400_BAD_REQUEST,
+                "message": "You have already submitted a review for this product."
+            })
+
         # Tạo đánh giá
         review = Review.objects.create(
             guest=guest,
             product_id=product_id,
             store_id=store_id,
-            order_detail=order_detail,
             rating=rating,
             comment=comment,
             gallery=gallery
         )
-        
+
         # Serialize và trả về phản hồi
         serializer = ReviewSerializer(review)
         return Response({
             "data": serializer.data,
             "status": status.HTTP_201_CREATED
-            }, status=status.HTTP_201_CREATED)
-        
+        }, status=status.HTTP_201_CREATED)
+
     @action(detail=False, methods=['put'], url_path="update-review")
     def update_review(self, request):
         # Lấy thông tin từ request
@@ -189,7 +189,7 @@ class AdminReviewViewset(viewsets.ViewSet):
         """
         admin_id = request.data.get('admin_id')
         review_id = request.data.get('review_id')
-        reply = request.data.get('reply')
+        reply = request.data.get('comment')
         
         if not review_id:
             return Response({
@@ -216,11 +216,10 @@ class AdminReviewViewset(viewsets.ViewSet):
         create_notification(
             guest=review.guest,  # Assuming `review.guest` gets the guest/author
             notification_type="review_reply",  # Define your notification type
-            message=f"Admin replied to your review: {reply}",  # Customize the message
+            message=f"{reply}",  # Customize the message
             related_object_id=review.id,  # Link it to the review ID
-            url=f"/reviews/{review.id}"  # Optionally add a URL to the review
+            url=f"/store/product-detail?store_id={review.store.id}&product_id={review.product.id}&catalog_id={review.product.catalog.id}"  # Optionally add a URL to the review
         )
-        
         # Serialize and return the response
         serializer = ReviewReplySerializer(reply_review)
         return Response({
@@ -245,7 +244,7 @@ class PublicReviewViewset(viewsets.ViewSet):
         product_id = request.GET.get('product_id')
         store_id = request.GET.get('store_id')
 
-        reviews = Review.objects.filter(product_id=product_id, store_id = store_id)
+        reviews = Review.objects.filter(product_id=product_id, store_id = store_id).order_by('-updated_at')
           # Tính toán đánh giá trung bình
         average_rating = reviews.aggregate(average_rating=Avg('rating'))['average_rating'] or 0
         

@@ -4,6 +4,7 @@ from .models import Product
 class ProductSerializer(serializers.ModelSerializer):
     catalog_name = serializers.CharField(source='catalog.name', read_only=True)
     promotion_name = serializers.CharField(source='promotion.name', read_only=True)
+    promotion_status = serializers.CharField(source='promotion.status', read_only=True)
     promotion_id = serializers.CharField(source='promotion.id', read_only=True)
     promotion_from_date = serializers.DateField(source='promotion.from_date', read_only=True)
     promotion_to_date = serializers.DateField(source='promotion.to_date', read_only=True)

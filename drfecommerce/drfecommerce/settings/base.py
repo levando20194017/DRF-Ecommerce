@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     "drfecommerce.apps.store",
     "drfecommerce.apps.tag",
     "drfecommerce.apps.transaction",
+    "drfecommerce.apps.contact",
 ]
 
 ALLOWED_HOSTS = ['*']
@@ -62,7 +63,7 @@ CORS_ORIGIN_WHITELIST = [
     '*' # the domain for front-end app(you can add more than 1) 
 ]
 CORS_ALLOWED_ORIGINS = ['http://localhost:3000', 'http://localhost:3001']
-CORS_ALLOW_METHODS = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+CORS_ALLOW_METHODS = ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"]
 
 # Đường dẫn cục bộ cho việc lưu trữ ảnh
 ECOMMERCE_IMAGES_DIR = os.path.join(BASE_DIR, 'C:/Users/Mine/Documents/document/PROJECT/DATN/Ecommerce_Images')
@@ -115,10 +116,13 @@ TEMPLATES = [
         },
     },
 ]
-# STATIC_URL = '/static/'
+
+# Cấu hình đường dẫn đến thư mục static nằm bên trong thư mục con 'drfecommerce'
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'static'),  # Đường dẫn đến thư mục static
+    os.path.join(BASE_DIR, 'static'),  # Đảm bảo đường dẫn chính xác
 ]
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 WSGI_APPLICATION = "drfecommerce.wsgi.application"
 
@@ -157,8 +161,6 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
-
-STATIC_URL = "static/"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
@@ -204,7 +206,7 @@ EMAIL_USE_TLS = True  # Set to True for TLS; False for SSL
 EMAIL_USE_SSL = False  # Set to True for TLS; False for SSL
 EMAIL_HOST_USER = os.environ.get("EMAIL")  # Your email address
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_PASSWORD")  # Your email password
-DEFAULT_FROM_EMAIL = 'VIVAFLOWER <no-reply@yourdomain.com>'
+DEFAULT_FROM_EMAIL = 'VIVAPHONE <no-reply@yourdomain.com>'
 ADMIN_EMAIL = 'levando20194017@gmail.com'  # Admin email for notifications
 
 #tích hợp thanh toán qua vnpay

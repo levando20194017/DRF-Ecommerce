@@ -12,12 +12,19 @@ from django.core.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from drfecommerce.apps.guest.authentication import GuestSafeJWTAuthentication
 from rest_framework.permissions import AllowAny
+from drfecommerce.apps.my_admin.serializers import AdminSerializerGetData
+from drfecommerce.apps.my_admin.models import MyAdmin
 from rest_framework.decorators import action, permission_classes, authentication_classes
 from drfecommerce.apps.guest.utils import generate_access_token, generate_refresh_token
 from rest_framework import exceptions
 import os
 from dotenv import load_dotenv
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
+from drfecommerce.settings import base
 
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
 # Load environment variables from .env file
 load_dotenv()
 
@@ -138,42 +145,55 @@ class GuestViewSetChangeInfor(viewsets.ViewSet):
                 "status": 404,
                 "message": "User not found."
             })
-
-class ChangeAvatarAPI(viewsets.ViewSet):
-    serializer_class = GuestSerializerChangeAvatar
-    
-    authentication_classes = [GuestSafeJWTAuthentication]
-    permission_classes = [IsAuthenticated] 
-    
+            
     @action(detail=False, methods=['put'], url_path="change-avatar")
     def change_avatar(self, request):
-        img_data = request.data.get('file')  # Nhận dữ liệu ảnh dưới dạng binary
+        if 'file' not in request.FILES:
+            return Response({
+                "status": status.HTTP_400_BAD_REQUEST,
+                "message": "No image file found in request."
+            })
+
         user_id = request.data.get('user_id')
-        file_name = request.data.get('file_name')
+        if not user_id:
+            return Response({
+                "status": status.HTTP_400_BAD_REQUEST,
+                "message": "User ID is required."
+            })
+
         try:
             user = Guest.objects.get(id=user_id)
-
-            # Lưu file ảnh vào đường dẫn cục bộ
-            img_path = os.path.join("C:/Users/Mine/Documents/document/PROJECT/DATN/AI_Platform_Images/", file_name)
-            
-            # Đọc dữ liệu từ InMemoryUploadedFile và ghi vào file
-            with open(img_path, 'wb') as img_file:
-                for chunk in img_data.chunks():
-                    img_file.write(chunk)
-
-            # Cập nhật đường dẫn ảnh vào trường img_url của user
-            user.avatar = f'file:///C:/Users/Mine/Documents/document/PROJECT/DATN/AI_Platform_Images/{file_name}'
-            user.save()
-            return Response({
-                    "status": 200,
-                    "message": "Avatar changed successfully", 
-                    "img_url": user.avatar
-                 })
         except Guest.DoesNotExist:
             return Response({
-                "status": 404,
+                "status": status.HTTP_404_NOT_FOUND,
                 "message": "User not found."
             })
+
+        image = request.FILES['file']
+        img_name = image.name
+
+        try:
+            # Sử dụng default_storage để lưu ảnh
+            save_path = os.path.join(base.MEDIA_ROOT, img_name)
+            file_path = default_storage.save(save_path, ContentFile(image.read()))
+            file_url = default_storage.url(file_path)
+
+            # Cập nhật avatar của user
+            user.avatar = file_url
+            user.save()
+
+            return Response({
+                "status": status.HTTP_200_OK,
+                "message": "Avatar changed successfully!",
+                "img_url": file_url
+            }, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({
+                "status": status.HTTP_500_INTERNAL_SERVER_ERROR,
+                "message": f"An error occurred while saving the image: {str(e)}"
+            })
+            
 @authentication_classes([])            
 @permission_classes([AllowAny])       
 class GuestViewSetCreate(viewsets.ViewSet):
@@ -234,36 +254,61 @@ class GuestViewSetLogin(viewsets.ViewSet):
     # @ensure_csrf_cookie
     #api login
     def login(self, request):
-        try:
-            user = Guest.objects.get(email=request.data['email'], password=request.data['password'])
-            serializer_user = GuestSerializerGetData(user)
-            # refresh = RefreshToken.for_user(user)
-            
-            access_token = generate_access_token(user)
-            refresh_token = generate_refresh_token(user)
-            
-            # response = Response()
-            # response.set_cookie(key='refreshtoken', value=refresh_token, httponly=True)
-            if not user.is_verified:
-                return Response({
-                    "status": 201,
-                    "message": "This account is not verified.", 
-                })
-            else:       
-                return Response({
-                    "status": 200,
-                    "message": "OK",
-                    "data": {
-                            'access_token': access_token,
-                            'refresh_token': refresh_token,
-                            'user_infor': serializer_user.data
-                        }
+        # try:
+            user = Guest.objects.filter(email=request.data['email'], password=request.data['password'])
+            if not user:
+                try:            
+                    admin = MyAdmin.objects.get(email=request.data['email'], password=request.data['password'])
+                    serializer_admin = AdminSerializerGetData(admin)
+                    access_token = generate_access_token(admin)
+                    refresh_token = generate_refresh_token(admin)
+                    
+                    return Response({
+                            "status": 200,
+                            "message": "OK",
+                            "data": {
+                                    'access_token': access_token,
+                                    'refresh_token': refresh_token,
+                                    'user_infor': serializer_admin.data
+                                }
+                            })   
+                except MyAdmin.DoesNotExist:
+                    return Response({
+                        "status": 404,
+                        "message": "Invalid email or password"
                     })
-        except Guest.DoesNotExist:
-            return Response({
-                "status": 404,
-                "message": "Invalid email or password"
-            })
+                    
+            else:
+                try:    
+                    user = Guest.objects.get(email=request.data['email'], password=request.data['password'])
+                    serializer_user = GuestSerializerGetData(user)
+                    # refresh = RefreshToken.for_user(user)
+                    
+                    access_token = generate_access_token(user)
+                    refresh_token = generate_refresh_token(user)
+                    
+                    # response = Response()
+                    # response.set_cookie(key='refreshtoken', value=refresh_token, httponly=True)
+                    if not user.is_verified:
+                        return Response({
+                            "status": 201,
+                            "message": "This account is not verified.", 
+                        })
+                    else:       
+                        return Response({
+                            "status": 200,
+                            "message": "OK",
+                            "data": {
+                                    'access_token': access_token,
+                                    'refresh_token': refresh_token,
+                                    'user_infor': serializer_user.data
+                                }
+                            })
+                except Guest.DoesNotExist:
+                    return Response({
+                        "status": 404,
+                        "message": "Invalid email or password"
+                    })
 
 @authentication_classes([])            
 @permission_classes([AllowAny])

@@ -13,6 +13,18 @@ class OrderDetail(models.Model):
     product_name = models.CharField(max_length=255)
     quantity = models.IntegerField()
     unit_price = models.FloatField()
+    promotion_name = models.CharField(max_length=255, null=True, blank=True)
+    promotion_discount_value = models.FloatField( null=True, blank=True)
+    promotion_discount_type = models.CharField(
+            max_length=50,
+            choices=[
+            ('percentage', 'Percentage Discount'),
+            ('fixed', 'Fixed Discount'),
+        ],
+        null=True, blank=True
+    )
+    
+    color = models.CharField(default= '', max_length= 50, null=True, blank=True) #màu sắc của sản phẩm
     location_pickup = models.CharField(max_length=255)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)

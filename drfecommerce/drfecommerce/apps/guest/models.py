@@ -13,6 +13,8 @@ class Guest(models.Model):
     password = models.CharField(max_length=255)
     phone_number = models.CharField(default= '', max_length=20, null=True, blank=True)
     avatar = models.CharField(default= '', max_length=255, null=True, blank=True)
+    date_of_birth = models.DateTimeField(null=True, blank=True, default=None)
+    gender = models.BooleanField(default=0) #0 male, 1 female
     is_verified = models.BooleanField(default=False)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
