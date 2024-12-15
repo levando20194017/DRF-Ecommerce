@@ -2,6 +2,7 @@ from rest_framework import viewsets, status
 from rest_framework.response import Response
 from .serializers import ProductSaleSerializer, ProductReportSaleSerializer
 from drfecommerce.apps.product_sale.models import ProductSale
+from drfecommerce.apps.product_store.models import ProductStore
 from drfecommerce.apps.product.models import Product
 from drfecommerce.apps.product.serializers import ProductSerializer
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -155,10 +156,16 @@ class PublicProductSaleViewSet(viewsets.ViewSet):
 
         # Nếu danh sách sản phẩm đã bán rỗng, lấy danh sách mặc định từ bảng Product
         if len(product_sales) < 4:
-            products = Product.objects.all()
-            products = products.order_by('-updated_at')
+            productStore = ProductStore.objects.filter(store=store_id).order_by('-updated_at')
             # Áp dụng phân trang cho sản phẩm
-            paginator = Paginator(products, page_size)
+            
+            
+            product_data = []
+            for product_store in productStore:
+                product = product_store.product
+                product_data.append(product)
+            
+            paginator = Paginator(product_data, page_size)
             try:
                 paginated_products = paginator.page(page_index)
             except PageNotAnInteger:
