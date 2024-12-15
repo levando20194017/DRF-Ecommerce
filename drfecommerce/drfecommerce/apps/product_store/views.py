@@ -11,7 +11,11 @@ from drfecommerce.apps.my_admin.authentication import AdminSafeJWTAuthentication
 from django.core.paginator import Paginator
 from django.core.paginator import EmptyPage
 from django.core.paginator import PageNotAnInteger
-
+from django.db.models import Sum
+from django.db.models import Avg
+from drfecommerce.apps.product.serializers import ProductSerializer
+from drfecommerce.apps.catalog.models import Catalog
+from drfecommerce.apps.review.models import Review
 class ProductStoreViewSet(viewsets.ModelViewSet):
     queryset = ProductStore.objects.all()
     serializer_class = ProductStoreSerializer
@@ -356,5 +360,91 @@ class PublicProductStoreViewSet(viewsets.ModelViewSet):
             "message": "OK",
             "data": {
                 'product': serializer.data
+            }
+        }, status=status.HTTP_200_OK)
+        
+        
+    @action(detail=True, methods=['get'], url_path='search-products-in-store-by-catalog')
+    def search_products_in_store_by_catalog(self, request, pk=None):
+        """
+        API lấy danh sách các sản phẩm trong cửa hàng theo store và catalog (bao gồm catalog con).
+        query_params:
+        - page_index: trang (mặc định là 1)
+        - page_size: số lượng sản phẩm trên mỗi trang (mặc định là 10)
+        - store_id: ID của store để lọc
+        - catalog_id: ID của catalog để lọc sản phẩm
+        - textSearch: string search theo tên sản phẩm
+        """
+        page_index = int(request.GET.get('page_index', 1))
+        page_size = int(request.GET.get('page_size', 10))
+        store_id = request.GET.get('store_id')
+        catalog_id = request.GET.get('catalog_id')
+        name = request.GET.get('textSearch')
+
+        try:
+            store = Store.objects.get(id=store_id)
+        except Store.DoesNotExist:
+            return Response({
+                "status": status.HTTP_404_NOT_FOUND,
+                "message": "Store not found."
+            })
+
+        # Lấy danh sách các catalog con của catalog_id truyền vào
+        catalog = Catalog.objects.get(id=catalog_id)
+        
+        # Hàm đệ quy lấy tất cả các catalog con
+        def get_child_catalogs(parent_catalog):
+            children = Catalog.objects.filter(parent_id=parent_catalog, delete_at__isnull=True)
+            result = list(children)
+            for child in children:
+                result.extend(get_child_catalogs(child))
+            return result
+
+        all_catalogs = [catalog]
+        all_catalogs.extend(get_child_catalogs(catalog))
+
+        catalog_ids = [cat.id for cat in all_catalogs]
+
+        # Lọc sản phẩm trong store thuộc các catalog này
+        products = ProductStore.objects.filter(store=store, delete_at__isnull=True, product__catalog_id__in=catalog_ids).order_by('-updated_at')
+        
+        if name:
+            products = products.filter(product__name__icontains=name)
+
+        # Tính toán avg_rating cho mỗi sản phẩm
+        product_data = []
+        for product_store in products:
+            product = product_store.product
+            store = product_store.store
+            
+            # Tính avg_rating từ bảng ProductReview
+            avg_rating = Review.objects.filter(product=product, store = store).aggregate(Avg('rating'))['rating__avg'] or 0
+            
+            product_serializer = ProductSerializer(product)
+            product_data.append({
+                "product": product_serializer.data,
+                "remaining_stock": product_store.remaining_stock,
+                "avg_rating": avg_rating
+            })
+
+        # Phân trang sản phẩm
+        paginator = Paginator(product_data, page_size)
+        try:
+            paginated_products = paginator.page(page_index)
+        except PageNotAnInteger:
+            paginated_products = paginator.page(1)
+        except EmptyPage:
+            paginated_products = paginator.page(paginator.num_pages)
+
+        # Trả về kết quả
+        return Response({
+            "status": status.HTTP_200_OK,
+            "message": "OK",
+            "data": {
+                "total_pages": paginator.num_pages,
+                "total_items": paginator.count,
+                "page_index": page_index,
+                "page_size": page_size,
+                "products": paginated_products.object_list
             }
         }, status=status.HTTP_200_OK)

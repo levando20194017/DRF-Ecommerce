@@ -136,6 +136,8 @@ urlpatterns = [
     path("api/product_incoming/admin/search_product_incomings/", views_product_incoming.ProductIncomingViewSet.as_view({'get': 'search_product_incomings'}), name='admin-search-product-incomings'),
     path("api/product_incoming/admin/expenditure-statistics/", views_product_incoming.ProductIncomingViewSet.as_view({'get': 'expenditure_statistics'}), name='admin-get-expenditure-statistics'),
     
+    path("api/product_incoming/get-list-product-incoming-by-catalog/", views_product_incoming.PublicProductIncomingVIewSet.as_view({'get': 'list_product_incoming_by_catalog'}), name='get-list-product-incomings-by-catalog'),
+    
     #product_sale (Liên quan đến sản phẩm đã bán, thống kê nó)
     #thống kê của cửa hàng theo ngày. các số lượng đã bán
     path("api/product_sale/admin/get-all-products-sale/", views_product_sale.AdminProductSaleViewSet.as_view({'get': 'get_all_products_sale'}), name='admin-get-all-products-sale'),
@@ -166,6 +168,8 @@ urlpatterns = [
     path("api/product_store/detail-of-product-and-store/", views_product_store.PublicProductStoreViewSet.as_view({'get': 'detail_product_store'}), name='detail-product-and-store'),
     #api tìm kiếm các sản phẩm có trong cửa hàng
     path("api/product_store/search-products-in-store/", views_product_store.PublicProductStoreViewSet.as_view({'get': 'search_products_in_store'}), name='search-list-products-in-store'),
+    #api tìm kiếm các sản phẩm trong cửa hàng theo catalog
+    path("api/product_store/search-products-in-store-by-catalog/", views_product_store.PublicProductStoreViewSet.as_view({'get': 'search_products_in_store_by_catalog'}), name='search-list-products-in-store-by-catalog'),
     #order
     #--private route
     path("api/order/create-new-order/", views_order.OrderViewSet.as_view({'post': 'create_new_order'}), name='create-new-order'),
