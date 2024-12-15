@@ -64,6 +64,7 @@ class OrderViewSet(viewsets.ViewSet):
         payment_method = data.get('payment_method')
         # Nhận order_details dưới dạng chuỗi
         order_details_str = data.get('order_details', [])
+        order_id = data.get('order_id')
 
         # Kiểm tra xem order_details có phải là chuỗi không
         if isinstance(order_details_str, str):
@@ -120,14 +121,25 @@ class OrderViewSet(viewsets.ViewSet):
                 data['total_cost'] = total_cost
                 data['payment_method'] = payment_method
                 
-
                 # guest = get_object_or_404(Guest, id=guest_id)
                 data['guest'] = guest_id
                 
                 serializer = OrderCreateSerializer(data=data)
                 noti_avatar = ""
                 if serializer.is_valid(raise_exception=True):
-                    order = serializer.save()
+                    if order_id:  # Nếu `order_id` tồn tại
+                        try:
+                            # Tìm đơn hàng để cập nhật
+                            order = Order.objects.get(id=order_id)
+                            data['order_status'] = "pending"
+                            serializer = OrderCreateSerializer(order, data=data, partial=True)
+                            if serializer.is_valid(raise_exception=True):
+                                order = serializer.save()
+                                OrderDetail.objects.filter(order=order).delete()
+                        except Order.DoesNotExist:
+                            return Response({"message": "Order not found", "status": 404})
+                    else:  # Nếu không có `order_id`, tạo mới đơn hàng
+                        order = serializer.save()
 
                     # Step 2: Create OrderDetails
                     for detail in order_details:
