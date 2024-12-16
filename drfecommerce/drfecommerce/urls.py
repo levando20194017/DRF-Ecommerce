@@ -170,6 +170,8 @@ urlpatterns = [
     path("api/product_store/search-products-in-store/", views_product_store.PublicProductStoreViewSet.as_view({'get': 'search_products_in_store'}), name='search-list-products-in-store'),
     #api tìm kiếm các sản phẩm trong cửa hàng theo catalog
     path("api/product_store/search-products-in-store-by-catalog/", views_product_store.PublicProductStoreViewSet.as_view({'get': 'search_products_in_store_by_catalog'}), name='search-list-products-in-store-by-catalog'),
+    #api gợi ý sản phẩm
+    path("api/product_store/recommend-products/", views_product_store.PublicProductStoreViewSet.as_view({'get': 'recommend_products'}), name='recommend-products'),
     #order
     #--private route
     path("api/order/create-new-order/", views_order.OrderViewSet.as_view({'post': 'create_new_order'}), name='create-new-order'),

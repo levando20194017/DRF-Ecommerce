@@ -16,6 +16,9 @@ from django.db.models import Avg
 from drfecommerce.apps.product.serializers import ProductSerializer
 from drfecommerce.apps.catalog.models import Catalog
 from drfecommerce.apps.review.models import Review
+from sklearn.metrics.pairwise import cosine_similarity
+import numpy as np
+
 class ProductStoreViewSet(viewsets.ModelViewSet):
     queryset = ProductStore.objects.all()
     serializer_class = ProductStoreSerializer
@@ -448,3 +451,66 @@ class PublicProductStoreViewSet(viewsets.ModelViewSet):
                 "products": paginated_products.object_list
             }
         }, status=status.HTTP_200_OK)
+        
+    #api gợi ý sản phẩm, sử dụng thuật toán Collaborative filtering
+    @action(detail=True, methods=['get'], url_path='recommend-products')
+    def recommend_products(self, request, pk=None):
+        """
+        Gợi ý các sản phẩm cho người dùng trong cửa hàng dựa trên Collaborative Filtering.
+        """
+        guest_id = request.query_params.get('guest_id')  # Lấy guest_id từ query parameters
+        store_id = request.query_params.get('store_id')  # store_id là primary key của cửa hàng từ URL
+        
+        if not guest_id:
+            return Response({"error": "guest_id is required"}, status=400)
+
+        # Lấy các sản phẩm mà khách hàng đã đánh giá
+        reviews = Review.objects.filter(guest__id=guest_id, store__id=store_id)
+        
+        if not reviews.exists():
+            return Response({"message": "No reviews found for this user in this store"}, status=404)
+
+        rated_products = reviews.values_list('product', flat=True)
+
+        # Lấy tất cả các sản phẩm trong cửa hàng
+        products_in_store = ProductStore.objects.filter(store__id=store_id).values_list('product', flat=True)
+
+        # Lấy đánh giá của tất cả sản phẩm trong cửa hàng
+        product_ratings = {}
+        for product in products_in_store:
+            ratings = Review.objects.filter(product__id=product, store__id=store_id).values('rating')
+            if ratings:
+                product_ratings[product] = [rating['rating'] for rating in ratings]
+
+        # Tạo ma trận đánh giá (rating matrix)
+        product_ids = list(product_ratings.keys())
+        rating_matrix = []
+
+        for product in product_ids:
+            ratings = product_ratings[product]
+            row = [0] * len(product_ids)
+            row[product_ids.index(product)] = np.mean(ratings)  # Giá trị trung bình cho sản phẩm
+            rating_matrix.append(row)
+
+        # Tính toán cosine similarity giữa các sản phẩm
+        similarity_matrix = cosine_similarity(rating_matrix)
+
+        # Gợi ý sản phẩm có độ tương đồng cao với các sản phẩm đã đánh giá
+        recommended_products = []
+        for i, product_id in enumerate(product_ids):
+            if product_id not in rated_products:
+                similarity_score = np.sum(similarity_matrix[i])  # Tổng độ tương đồng với các sản phẩm đã đánh giá
+                recommended_products.append((product_id, similarity_score))
+
+        # Sắp xếp theo độ tương đồng giảm dần và lấy top 5 sản phẩm
+        recommended_products = sorted(recommended_products, key=lambda x: x[1], reverse=True)[:5]
+
+        # Lấy thông tin sản phẩm gợi ý
+        top_recommended_product_ids = [product for product, _ in recommended_products]
+        products = Product.objects.filter(id__in=top_recommended_product_ids)
+        serializer = ProductSerializer(products, many=True)
+
+        return Response({
+            "status": 200,
+            "data": serializer.data
+            })
