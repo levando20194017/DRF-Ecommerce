@@ -12,6 +12,12 @@ from django.utils.dateparse import parse_datetime
 from django.db.models import Sum, F
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
+from datetime import datetime
+from drfecommerce.apps.product_incoming.models import ProductIncoming
+from drfecommerce.apps.order.models import Order
+from django.db.models import DecimalField
+from datetime import timedelta
+
 class AdminProductSaleViewSet(viewsets.ViewSet):
     authentication_classes = [AdminSafeJWTAuthentication]
     permission_classes = [IsAuthenticated]
@@ -118,6 +124,129 @@ class AdminProductSaleViewSet(viewsets.ViewSet):
             "total_items": store_revenue.count(),
             "data": paginated_data,
         })
+        
+    @action(detail=False, methods=['get'], url_path="get-sales-and-incomings")
+    def get_sales_and_incomings(self, request):
+        # Lấy các tham số đầu vào từ query params
+        # Thống kê tổng số lượng, giá tiền đã nhập và đã bán theo từng ngày
+        store_id = request.query_params.get('store_id')
+        start_date = request.query_params.get('start_date')
+        end_date = request.query_params.get('end_date')
+        
+        if not start_date and not end_date:
+            print(start_date, end_date)
+            try:
+                latest_sale_date = ProductSale.objects.filter(store_id=store_id).latest('sale_date').sale_date
+                latest_incoming_date = ProductIncoming.objects.filter(store_id=store_id).latest('effective_date').effective_date
+                
+                print(latest_sale_date, latest_incoming_date)
+                # Ngày gần nhất giữa cả hai bảng
+                latest_date = max(latest_sale_date, latest_incoming_date).date()
+                end_date = latest_date
+                start_date = end_date - timedelta(days=30)  # Lấy 1 tháng trước đó
+                print(start_date, end_date)
+            except ProductSale.DoesNotExist and ProductIncoming.DoesNotExist:
+                return Response({"error": "No data available for this store."}, status=404)
+            
+        # print(start_date, end_date)
+        # Nếu ngày được cung cấp, chuyển đổi chúng sang datetime.date
+        try:
+            # Chuyển đổi start_date và end_date chỉ khi chúng là chuỗi
+            if start_date and isinstance(start_date, str):
+                start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
+
+            if end_date and isinstance(end_date, str):
+                end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
+        except ValueError:
+            return Response({"error": "Invalid date format. Use YYYY-MM-DD."}, status=400)
+
+        # Lọc dữ liệu bán hàng
+        sales_data = ProductSale.objects.filter(
+            store_id=store_id,
+            sale_date__date__gte=start_date,
+            sale_date__date__lte=end_date
+        ).values('sale_date__date').annotate(
+            total_revenue=Sum(F('sale_price') * F('quantity_sold'), output_field=DecimalField()),
+            total_quantity=Sum('quantity_sold')
+        ).order_by('sale_date__date')
+
+        
+        # Lọc dữ liệu nhập kho
+        incoming_data = ProductIncoming.objects.filter(
+            store_id=store_id,
+            effective_date__date__gte=start_date,
+            effective_date__date__lte=end_date
+        ).values('effective_date__date').annotate(
+            total_cost=Sum(F('cost_price') * F('quantity_in'), output_field=DecimalField()),
+            total_quantity=Sum('quantity_in')
+        ).order_by('effective_date__date')
+
+
+        # Chuẩn bị dữ liệu trả về
+        chart_data = {
+            "labels": [],  # Labels cho các ngày
+            "series": [
+                {
+                    "name": "Sales Revenue",
+                    "data": []
+                },
+                {
+                    "name": "Sales Quantity",
+                    "data": []
+                },
+                {
+                    "name": "Incoming Cost",
+                    "data": []
+                },
+                {
+                    "name": "Incoming Quantity",
+                    "data": []
+                }
+            ]
+        }
+
+        # Tập hợp các ngày có trong cả sales_data và incoming_data
+        all_dates = set(sale['sale_date__date'] for sale in sales_data) | set(incoming['effective_date__date'] for incoming in incoming_data)
+        all_dates = sorted(all_dates)
+
+        # Tạo từ điển dữ liệu
+        sales_dict = {sale['sale_date__date']: sale for sale in sales_data}
+        incoming_dict = {incoming['effective_date__date']: incoming for incoming in incoming_data}
+
+        chart_data = {
+            "labels": [],  # Labels cho các ngày
+            "series": [
+                {"name": "Sales Revenue", "data": []},
+                {"name": "Sales Quantity", "data": []},
+                {"name": "Incoming Cost", "data": []},
+                {"name": "Incoming Quantity", "data": []},
+            ]
+        }
+
+        # Duyệt qua các ngày để xây dựng dữ liệu
+        for date in all_dates:
+            chart_data["labels"].append(date.strftime('%Y-%m-%d'))
+            
+            # Bán hàng
+            if date in sales_dict:
+                chart_data["series"][0]["data"].append(float(sales_dict[date]['total_revenue']))
+                chart_data["series"][1]["data"].append(sales_dict[date]['total_quantity'])
+            else:
+                chart_data["series"][0]["data"].append(0)
+                chart_data["series"][1]["data"].append(0)
+            
+            # Nhập kho
+            if date in incoming_dict:
+                chart_data["series"][2]["data"].append(float(incoming_dict[date]['total_cost']))
+                chart_data["series"][3]["data"].append(incoming_dict[date]['total_quantity'])
+            else:
+                chart_data["series"][2]["data"].append(0)
+                chart_data["series"][3]["data"].append(0)
+                
+        return Response({
+          "data": chart_data,
+          "status": 200   
+        }, status=200)
 
 @authentication_classes([])            
 @permission_classes([AllowAny])      
@@ -214,4 +343,6 @@ class PublicProductSaleViewSet(viewsets.ViewSet):
                 "products": serializer.data
             }
         }, status=status.HTTP_200_OK)
+
+
 

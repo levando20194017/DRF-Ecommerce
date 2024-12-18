@@ -209,6 +209,10 @@ urlpatterns = [
     path("api/contact/admin/delete-contact/", views_contact.AdminContactViewSet.as_view({'delete': 'delete_contact'}), name='delete-contact'),
     path("api/contact/admin/update-advised-status/", views_contact.AdminContactViewSet.as_view({'patch': 'update_advised_status'}), name='update-advised-status'),
     
+    # Thống kê (dash board)
+    # chart 
+    path("api/dashboard/admin/get-sales-and-incomings/", views_product_sale.AdminProductSaleViewSet.as_view({'get': 'get_sales_and_incomings'}), name='get-sales-and-incomings'),
+    
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/schema/docs", SpectacularSwaggerView.as_view(url_name="schema")),
 ]+ static(base.MEDIA_URL, document_root=base.MEDIA_ROOT)
