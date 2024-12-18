@@ -14,6 +14,7 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 from datetime import datetime
 from drfecommerce.apps.product_incoming.models import ProductIncoming
+from drfecommerce.apps.guest.models import Guest
 from drfecommerce.apps.order.models import Order
 from django.db.models import DecimalField
 from datetime import timedelta
@@ -76,54 +77,54 @@ class AdminProductSaleViewSet(viewsets.ViewSet):
             }
         }, status=status.HTTP_200_OK)
         
-    #Thống kê doanh thu của từng cửa hàng
-    @action(detail=False, methods=['get'], url_path="get-total-report")
-    def get_total_report(self, request):
-        """
-        Get total revenue per store and product quantities sold.
+    # #Thống kê doanh thu của từng cửa hàng
+    # @action(detail=False, methods=['get'], url_path="get-total-report")
+    # def get_total_report(self, request):
+    #     """
+    #     Get total revenue per store and product quantities sold.
         
-        Parameters:
-        - page_index: The index of the page (default is 1).
-        - page_size: The number of items per page (default is 10).
-        - start_date: Filter by start date (optional, format: YYYY-MM-DD).
-        - end_date: Filter by end date (optional, format: YYYY-MM-DD).
-        - store_id: Filter by store (optional).
-        """
-        page_index = int(request.GET.get('page_index', 1))
-        page_size = int(request.GET.get('page_size', 10))
-        start_date = request.GET.get('start_date')
-        end_date = request.GET.get('end_date')
-        store_id = request.GET.get('store_id')
+    #     Parameters:
+    #     - page_index: The index of the page (default is 1).
+    #     - page_size: The number of items per page (default is 10).
+    #     - start_date: Filter by start date (optional, format: YYYY-MM-DD).
+    #     - end_date: Filter by end date (optional, format: YYYY-MM-DD).
+    #     - store_id: Filter by store (optional).
+    #     """
+    #     page_index = int(request.GET.get('page_index', 1))
+    #     page_size = int(request.GET.get('page_size', 10))
+    #     start_date = request.GET.get('start_date')
+    #     end_date = request.GET.get('end_date')
+    #     store_id = request.GET.get('store_id')
 
-        # Start building the query
-        product_sales = ProductSale.objects.all().order_by('-updated_at')
+    #     # Start building the query
+    #     product_sales = ProductSale.objects.all().order_by('-updated_at')
 
-        # Filter by store if provided
-        if store_id:
-            product_sales = product_sales.filter(store_id=store_id)
+    #     # Filter by store if provided
+    #     if store_id:
+    #         product_sales = product_sales.filter(store_id=store_id)
 
-        # Filter by date range if provided
-        if start_date:
-            product_sales = product_sales.filter(sale_date__gte=start_date)
-        if end_date:
-            product_sales = product_sales.filter(sale_date__lte=end_date)
+    #     # Filter by date range if provided
+    #     if start_date:
+    #         product_sales = product_sales.filter(sale_date__gte=start_date)
+    #     if end_date:
+    #         product_sales = product_sales.filter(sale_date__lte=end_date)
 
-        # Calculate total revenue for each store
-        store_revenue = product_sales.values('store__name').annotate(
-            total_revenue=Sum(F('sale_price') * F('quantity_sold')),
-            total_quantity_sold=Sum('quantity_sold')
-        )
+    #     # Calculate total revenue for each store
+    #     store_revenue = product_sales.values('store__name').annotate(
+    #         total_revenue=Sum(F('sale_price') * F('quantity_sold')),
+    #         total_quantity_sold=Sum('quantity_sold')
+    #     )
 
-        # Get paginated response
-        start = (page_index - 1) * page_size
-        end = page_index * page_size
-        paginated_data = store_revenue[start:end]
+    #     # Get paginated response
+    #     start = (page_index - 1) * page_size
+    #     end = page_index * page_size
+    #     paginated_data = store_revenue[start:end]
 
-        return Response({
-            "status": status.HTTP_200_OK,
-            "total_items": store_revenue.count(),
-            "data": paginated_data,
-        })
+    #     return Response({
+    #         "status": status.HTTP_200_OK,
+    #         "total_items": store_revenue.count(),
+    #         "data": paginated_data,
+    #     })
         
     @action(detail=False, methods=['get'], url_path="get-sales-and-incomings")
     def get_sales_and_incomings(self, request):
@@ -247,7 +248,53 @@ class AdminProductSaleViewSet(viewsets.ViewSet):
           "data": chart_data,
           "status": 200   
         }, status=200)
+        
+    @action(detail=False, methods=['get'], url_path="get-total-report")
+    def get_total_report(self, request):
+        store_id = request.query_params.get('store_id')
+        
+        order = Order.objects.all().exclude(order_status="cancelled")
+        guest = Guest.objects.filter(is_verified = True)
+   
+         # Tính toán từ bảng ProductIncoming
+        incoming_query = ProductIncoming.objects.all()
+        if store_id:
+            incoming_query = incoming_query.filter(store_id=store_id)
 
+        total_income = incoming_query.aggregate(
+            total_cost=Sum(F('cost_price') * F('quantity_in'), output_field=DecimalField())
+        )['total_cost'] or 0
+
+        total_quantity_in = incoming_query.aggregate(
+            total_quantity=Sum('quantity_in')
+        )['total_quantity'] or 0
+
+        # Tính toán từ bảng ProductSale
+        sales_query = ProductSale.objects.all()
+        if store_id:
+            sales_query = sales_query.filter(store_id=store_id)
+
+        total_revenue = sales_query.aggregate(
+            total_revenue=Sum(F('sale_price') * F('quantity_sold'), output_field=DecimalField())
+        )['total_revenue'] or 0
+
+        total_quantity_sold = sales_query.aggregate(
+            total_quantity=Sum('quantity_sold')
+        )['total_quantity'] or 0
+
+        # Trả về dữ liệu
+        return Response({
+            "data": {
+                "total_orders": order.count(),
+                "total_guest": guest.count(),
+                "total_income": total_income,
+                "total_revenue": total_revenue,
+                "total_quantity_in": total_quantity_in,
+                "total_quantity_sold": total_quantity_sold,
+            },
+            "status": 200   
+        }, status=200)
+    
 @authentication_classes([])            
 @permission_classes([AllowAny])      
 class PublicProductSaleViewSet(viewsets.ViewSet):
