@@ -170,6 +170,8 @@ urlpatterns = [
     path("api/product_store/search-products-in-store/", views_product_store.PublicProductStoreViewSet.as_view({'get': 'search_products_in_store'}), name='search-list-products-in-store'),
     #api tìm kiếm các sản phẩm trong cửa hàng theo catalog
     path("api/product_store/search-products-in-store-by-catalog/", views_product_store.PublicProductStoreViewSet.as_view({'get': 'search_products_in_store_by_catalog'}), name='search-list-products-in-store-by-catalog'),
+    #api gợi ý sản phẩm
+    path("api/product_store/recommend-products/", views_product_store.PublicProductStoreViewSet.as_view({'get': 'recommend_products'}), name='recommend-products'),
     #order
     #--private route
     path("api/order/create-new-order/", views_order.OrderViewSet.as_view({'post': 'create_new_order'}), name='create-new-order'),
@@ -206,6 +208,10 @@ urlpatterns = [
     path("api/contact/admin/search-contacts/", views_contact.AdminContactViewSet.as_view({'get': 'search_contacts'}), name='search-contacts'),
     path("api/contact/admin/delete-contact/", views_contact.AdminContactViewSet.as_view({'delete': 'delete_contact'}), name='delete-contact'),
     path("api/contact/admin/update-advised-status/", views_contact.AdminContactViewSet.as_view({'patch': 'update_advised_status'}), name='update-advised-status'),
+    
+    # Thống kê (dash board)
+    # chart 
+    path("api/dashboard/admin/get-sales-and-incomings/", views_product_sale.AdminProductSaleViewSet.as_view({'get': 'get_sales_and_incomings'}), name='get-sales-and-incomings'),
     
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/schema/docs", SpectacularSwaggerView.as_view(url_name="schema")),

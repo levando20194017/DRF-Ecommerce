@@ -12,6 +12,13 @@ from django.utils.dateparse import parse_datetime
 from django.db.models import Sum, F
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
+from datetime import datetime
+from drfecommerce.apps.product_incoming.models import ProductIncoming
+from drfecommerce.apps.guest.models import Guest
+from drfecommerce.apps.order.models import Order
+from django.db.models import DecimalField
+from datetime import timedelta
+
 class AdminProductSaleViewSet(viewsets.ViewSet):
     authentication_classes = [AdminSafeJWTAuthentication]
     permission_classes = [IsAuthenticated]
@@ -70,55 +77,224 @@ class AdminProductSaleViewSet(viewsets.ViewSet):
             }
         }, status=status.HTTP_200_OK)
         
-    #Thống kê doanh thu của từng cửa hàng
+    # #Thống kê doanh thu của từng cửa hàng
+    # @action(detail=False, methods=['get'], url_path="get-total-report")
+    # def get_total_report(self, request):
+    #     """
+    #     Get total revenue per store and product quantities sold.
+        
+    #     Parameters:
+    #     - page_index: The index of the page (default is 1).
+    #     - page_size: The number of items per page (default is 10).
+    #     - start_date: Filter by start date (optional, format: YYYY-MM-DD).
+    #     - end_date: Filter by end date (optional, format: YYYY-MM-DD).
+    #     - store_id: Filter by store (optional).
+    #     """
+    #     page_index = int(request.GET.get('page_index', 1))
+    #     page_size = int(request.GET.get('page_size', 10))
+    #     start_date = request.GET.get('start_date')
+    #     end_date = request.GET.get('end_date')
+    #     store_id = request.GET.get('store_id')
+
+    #     # Start building the query
+    #     product_sales = ProductSale.objects.all().order_by('-updated_at')
+
+    #     # Filter by store if provided
+    #     if store_id:
+    #         product_sales = product_sales.filter(store_id=store_id)
+
+    #     # Filter by date range if provided
+    #     if start_date:
+    #         product_sales = product_sales.filter(sale_date__gte=start_date)
+    #     if end_date:
+    #         product_sales = product_sales.filter(sale_date__lte=end_date)
+
+    #     # Calculate total revenue for each store
+    #     store_revenue = product_sales.values('store__name').annotate(
+    #         total_revenue=Sum(F('sale_price') * F('quantity_sold')),
+    #         total_quantity_sold=Sum('quantity_sold')
+    #     )
+
+    #     # Get paginated response
+    #     start = (page_index - 1) * page_size
+    #     end = page_index * page_size
+    #     paginated_data = store_revenue[start:end]
+
+    #     return Response({
+    #         "status": status.HTTP_200_OK,
+    #         "total_items": store_revenue.count(),
+    #         "data": paginated_data,
+    #     })
+        
+    @action(detail=False, methods=['get'], url_path="get-sales-and-incomings")
+    def get_sales_and_incomings(self, request):
+        # Lấy các tham số đầu vào từ query params
+        # Thống kê tổng số lượng, giá tiền đã nhập và đã bán theo từng ngày
+        store_id = request.query_params.get('store_id')
+        start_date = request.query_params.get('start_date')
+        end_date = request.query_params.get('end_date')
+        
+        if not start_date and not end_date:
+            print(start_date, end_date)
+            try:
+                latest_sale_date = ProductSale.objects.filter(store_id=store_id).latest('sale_date').sale_date
+                latest_incoming_date = ProductIncoming.objects.filter(store_id=store_id).latest('effective_date').effective_date
+                
+                print(latest_sale_date, latest_incoming_date)
+                # Ngày gần nhất giữa cả hai bảng
+                latest_date = max(latest_sale_date, latest_incoming_date).date()
+                end_date = latest_date
+                start_date = end_date - timedelta(days=30)  # Lấy 1 tháng trước đó
+                print(start_date, end_date)
+            except ProductSale.DoesNotExist and ProductIncoming.DoesNotExist:
+                return Response({"error": "No data available for this store."}, status=404)
+            
+        # print(start_date, end_date)
+        # Nếu ngày được cung cấp, chuyển đổi chúng sang datetime.date
+        try:
+            # Chuyển đổi start_date và end_date chỉ khi chúng là chuỗi
+            if start_date and isinstance(start_date, str):
+                start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
+
+            if end_date and isinstance(end_date, str):
+                end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
+        except ValueError:
+            return Response({"error": "Invalid date format. Use YYYY-MM-DD."}, status=400)
+
+        # Lọc dữ liệu bán hàng
+        sales_data = ProductSale.objects.filter(
+            store_id=store_id,
+            sale_date__date__gte=start_date,
+            sale_date__date__lte=end_date
+        ).values('sale_date__date').annotate(
+            total_revenue=Sum(F('sale_price') * F('quantity_sold'), output_field=DecimalField()),
+            total_quantity=Sum('quantity_sold')
+        ).order_by('sale_date__date')
+
+        
+        # Lọc dữ liệu nhập kho
+        incoming_data = ProductIncoming.objects.filter(
+            store_id=store_id,
+            effective_date__date__gte=start_date,
+            effective_date__date__lte=end_date
+        ).values('effective_date__date').annotate(
+            total_cost=Sum(F('cost_price') * F('quantity_in'), output_field=DecimalField()),
+            total_quantity=Sum('quantity_in')
+        ).order_by('effective_date__date')
+
+
+        # Chuẩn bị dữ liệu trả về
+        chart_data = {
+            "labels": [],  # Labels cho các ngày
+            "series": [
+                {
+                    "name": "Sales Revenue",
+                    "data": []
+                },
+                {
+                    "name": "Sales Quantity",
+                    "data": []
+                },
+                {
+                    "name": "Incoming Cost",
+                    "data": []
+                },
+                {
+                    "name": "Incoming Quantity",
+                    "data": []
+                }
+            ]
+        }
+
+        # Tập hợp các ngày có trong cả sales_data và incoming_data
+        all_dates = set(sale['sale_date__date'] for sale in sales_data) | set(incoming['effective_date__date'] for incoming in incoming_data)
+        all_dates = sorted(all_dates)
+
+        # Tạo từ điển dữ liệu
+        sales_dict = {sale['sale_date__date']: sale for sale in sales_data}
+        incoming_dict = {incoming['effective_date__date']: incoming for incoming in incoming_data}
+
+        chart_data = {
+            "labels": [],  # Labels cho các ngày
+            "series": [
+                {"name": "Sales Revenue", "data": []},
+                {"name": "Sales Quantity", "data": []},
+                {"name": "Incoming Cost", "data": []},
+                {"name": "Incoming Quantity", "data": []},
+            ]
+        }
+
+        # Duyệt qua các ngày để xây dựng dữ liệu
+        for date in all_dates:
+            chart_data["labels"].append(date.strftime('%Y-%m-%d'))
+            
+            # Bán hàng
+            if date in sales_dict:
+                chart_data["series"][0]["data"].append(float(sales_dict[date]['total_revenue']))
+                chart_data["series"][1]["data"].append(sales_dict[date]['total_quantity'])
+            else:
+                chart_data["series"][0]["data"].append(0)
+                chart_data["series"][1]["data"].append(0)
+            
+            # Nhập kho
+            if date in incoming_dict:
+                chart_data["series"][2]["data"].append(float(incoming_dict[date]['total_cost']))
+                chart_data["series"][3]["data"].append(incoming_dict[date]['total_quantity'])
+            else:
+                chart_data["series"][2]["data"].append(0)
+                chart_data["series"][3]["data"].append(0)
+                
+        return Response({
+          "data": chart_data,
+          "status": 200   
+        }, status=200)
+        
     @action(detail=False, methods=['get'], url_path="get-total-report")
     def get_total_report(self, request):
-        """
-        Get total revenue per store and product quantities sold.
+        store_id = request.query_params.get('store_id')
         
-        Parameters:
-        - page_index: The index of the page (default is 1).
-        - page_size: The number of items per page (default is 10).
-        - start_date: Filter by start date (optional, format: YYYY-MM-DD).
-        - end_date: Filter by end date (optional, format: YYYY-MM-DD).
-        - store_id: Filter by store (optional).
-        """
-        page_index = int(request.GET.get('page_index', 1))
-        page_size = int(request.GET.get('page_size', 10))
-        start_date = request.GET.get('start_date')
-        end_date = request.GET.get('end_date')
-        store_id = request.GET.get('store_id')
-
-        # Start building the query
-        product_sales = ProductSale.objects.all().order_by('-updated_at')
-
-        # Filter by store if provided
+        order = Order.objects.all().exclude(order_status="cancelled")
+        guest = Guest.objects.filter(is_verified = True)
+   
+         # Tính toán từ bảng ProductIncoming
+        incoming_query = ProductIncoming.objects.all()
         if store_id:
-            product_sales = product_sales.filter(store_id=store_id)
+            incoming_query = incoming_query.filter(store_id=store_id)
 
-        # Filter by date range if provided
-        if start_date:
-            product_sales = product_sales.filter(sale_date__gte=start_date)
-        if end_date:
-            product_sales = product_sales.filter(sale_date__lte=end_date)
+        total_income = incoming_query.aggregate(
+            total_cost=Sum(F('cost_price') * F('quantity_in'), output_field=DecimalField())
+        )['total_cost'] or 0
 
-        # Calculate total revenue for each store
-        store_revenue = product_sales.values('store__name').annotate(
-            total_revenue=Sum(F('sale_price') * F('quantity_sold')),
-            total_quantity_sold=Sum('quantity_sold')
-        )
+        total_quantity_in = incoming_query.aggregate(
+            total_quantity=Sum('quantity_in')
+        )['total_quantity'] or 0
 
-        # Get paginated response
-        start = (page_index - 1) * page_size
-        end = page_index * page_size
-        paginated_data = store_revenue[start:end]
+        # Tính toán từ bảng ProductSale
+        sales_query = ProductSale.objects.all()
+        if store_id:
+            sales_query = sales_query.filter(store_id=store_id)
 
+        total_revenue = sales_query.aggregate(
+            total_revenue=Sum(F('sale_price') * F('quantity_sold'), output_field=DecimalField())
+        )['total_revenue'] or 0
+
+        total_quantity_sold = sales_query.aggregate(
+            total_quantity=Sum('quantity_sold')
+        )['total_quantity'] or 0
+
+        # Trả về dữ liệu
         return Response({
-            "status": status.HTTP_200_OK,
-            "total_items": store_revenue.count(),
-            "data": paginated_data,
-        })
-
+            "data": {
+                "total_orders": order.count(),
+                "total_guest": guest.count(),
+                "total_income": total_income,
+                "total_revenue": total_revenue,
+                "total_quantity_in": total_quantity_in,
+                "total_quantity_sold": total_quantity_sold,
+            },
+            "status": 200   
+        }, status=200)
+    
 @authentication_classes([])            
 @permission_classes([AllowAny])      
 class PublicProductSaleViewSet(viewsets.ViewSet):
@@ -214,4 +390,6 @@ class PublicProductSaleViewSet(viewsets.ViewSet):
                 "products": serializer.data
             }
         }, status=status.HTTP_200_OK)
+
+
 

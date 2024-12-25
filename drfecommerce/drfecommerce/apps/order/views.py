@@ -65,6 +65,7 @@ class OrderViewSet(viewsets.ViewSet):
         # Nhận order_details dưới dạng chuỗi
         order_details_str = data.get('order_details', [])
         order_id = data.get('order_id')
+        print(order_id)
 
         # Kiểm tra xem order_details có phải là chuỗi không
         if isinstance(order_details_str, str):
@@ -100,7 +101,7 @@ class OrderViewSet(viewsets.ViewSet):
                         return Response({"message": "Quantity must be greater than zero.", "status": 400})
                     
                     unit_price = product.price
-                    if product.promotion.id:
+                    if product.promotion and product.promotion.id:
                         promotion = get_object_or_404(Promotion, id=product.promotion.id)
                         
                         today = timezone.now().date()  # Lấy ngày hiện tại
@@ -140,7 +141,7 @@ class OrderViewSet(viewsets.ViewSet):
                             return Response({"message": "Order not found", "status": 404})
                     else:  # Nếu không có `order_id`, tạo mới đơn hàng
                         order = serializer.save()
-
+                        
                     # Step 2: Create OrderDetails
                     for detail in order_details:
                         product = get_object_or_404(Product, id=detail['product_id'])
@@ -153,7 +154,7 @@ class OrderViewSet(viewsets.ViewSet):
                         
                         today = timezone.now().date()  # Lấy ngày hiện tại
                         # Kiểm tra trạng thái và thời gian hiệu lực của khuyến mãi
-                        if promotion.status == "active" and promotion.from_date <= today <= promotion.to_date:
+                        if promotion and promotion.status == "active" and promotion.from_date <= today <= promotion.to_date:
                             OrderDetail.objects.create(
                                 order=order,
                                 product=product,
