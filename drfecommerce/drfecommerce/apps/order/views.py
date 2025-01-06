@@ -133,6 +133,7 @@ class OrderViewSet(viewsets.ViewSet):
                             # Tìm đơn hàng để cập nhật
                             order = Order.objects.get(id=order_id)
                             data['order_status'] = "pending"
+                            data['order_date'] = timezone.now()
                             serializer = OrderCreateSerializer(order, data=data, partial=True)
                             if serializer.is_valid(raise_exception=True):
                                 order = serializer.save()
@@ -460,7 +461,7 @@ class OrderViewSet(viewsets.ViewSet):
             })
 
         # Start building the query
-        orders = Order.objects.filter(guest=guest).order_by("-updated_at")
+        orders = Order.objects.filter(guest=guest).order_by("-order_date")
         
         if order_status:
             orders = orders.filter(order_status=order_status) #filter by order
@@ -540,7 +541,7 @@ class AdminOrderViewSet(viewsets.ViewSet):
         payment_method = request.GET.get('payment_method')  # Get payment method filter
         payment_status = request.GET.get('payment_status')  # Get payment status filter
         # Start building the query
-        orders = Order.objects.all()
+        orders = Order.objects.all().order_by("-order_date")
 
         # If start_date or end_date is provided, filter orders by date range
         if start_date or end_date:
