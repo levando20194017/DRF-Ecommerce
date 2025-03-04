@@ -18,7 +18,7 @@ from drfecommerce.apps.catalog.models import Catalog
 from drfecommerce.apps.review.models import Review
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
-
+from math import sqrt
 class ProductStoreViewSet(viewsets.ModelViewSet):
     queryset = ProductStore.objects.all()
     serializer_class = ProductStoreSerializer
@@ -464,53 +464,82 @@ class PublicProductStoreViewSet(viewsets.ModelViewSet):
         if not guest_id:
             return Response({"error": "guest_id is required"}, status=400)
 
-        # Lấy các sản phẩm mà khách hàng đã đánh giá
-        reviews = Review.objects.filter(guest__id=guest_id, store__id=store_id)
-        
-        if not reviews.exists():
-            return Response({"message": "No reviews found for this user in this store"}, status=404)
+        # Lấy tất cả người dùng và sản phẩm trong cửa hàng
+        users = list(Review.objects.filter(store__id=store_id).values_list('guest__id', flat=True).distinct())
+        products = list(Product.objects.filter(productstore__store__id=store_id).values_list('id', flat=True))
 
-        rated_products = reviews.values_list('product', flat=True)
+        # Tạo ma trận đánh giá người dùng - sản phẩm
+        rating_matrix = {user: {product: None for product in products} for user in users}
 
-        # Lấy tất cả các sản phẩm trong cửa hàng
-        products_in_store = ProductStore.objects.filter(store__id=store_id).values_list('product', flat=True)
+        for review in Review.objects.filter(store__id=store_id):
+            user = review.guest.id
+            product = review.product.id
+            rating_matrix[user][product] = review.rating
 
-        # Lấy đánh giá của tất cả sản phẩm trong cửa hàng
-        product_ratings = {}
-        for product in products_in_store:
-            ratings = Review.objects.filter(product__id=product, store__id=store_id).values('rating')
-            if ratings:
-                product_ratings[product] = [rating['rating'] for rating in ratings]
+        # Chuẩn hóa ma trận (trừ đi trung bình đánh giá của mỗi người dùng)
+        normalized_matrix = {}
+        user_averages = {}
 
-        # Tạo ma trận đánh giá (rating matrix)
-        product_ids = list(product_ratings.keys())
-        rating_matrix = []
+        for user, product_ratings in rating_matrix.items():
+            rated_values = [rating for rating in product_ratings.values() if rating is not None]
+            average_rating = sum(rated_values) / len(rated_values) if rated_values else 0
+            user_averages[user] = average_rating
+            normalized_matrix[user] = {
+                product: (rating - average_rating) if rating is not None else 0
+                for product, rating in product_ratings.items()
+            }
 
-        for product in product_ids:
-            ratings = product_ratings[product]
-            row = [0] * len(product_ids)
-            row[product_ids.index(product)] = np.mean(ratings)  # Giá trị trung bình cho sản phẩm
-            rating_matrix.append(row)
+        # Tính độ tương đồng giữa các người dùng bằng cosine similarity
+        def cosine_similarity(user1, user2):
+            ratings1 = list(normalized_matrix[user1].values())
+            ratings2 = list(normalized_matrix[user2].values())
+            dot_product = sum(a * b for a, b in zip(ratings1, ratings2))
+            norm1 = sqrt(sum(a ** 2 for a in ratings1))
+            norm2 = sqrt(sum(b ** 2 for b in ratings2))
+            return dot_product / (norm1 * norm2) if norm1 > 0 and norm2 > 0 else 0
 
-        # Tính toán cosine similarity giữa các sản phẩm
-        similarity_matrix = cosine_similarity(rating_matrix)
+        user_similarity_matrix = {
+            user1: {
+                user2: cosine_similarity(user1, user2) for user2 in users if user1 != user2
+            }
+            for user1 in users
+        }
 
-        # Gợi ý sản phẩm có độ tương đồng cao với các sản phẩm đã đánh giá
-        recommended_products = []
-        for i, product_id in enumerate(product_ids):
-            if product_id not in rated_products:
-                similarity_score = np.sum(similarity_matrix[i])  # Tổng độ tương đồng với các sản phẩm đã đánh giá
-                recommended_products.append((product_id, similarity_score))
+        # Dự đoán đánh giá cho các sản phẩm chưa được đánh giá
+        predicted_ratings = {}
 
-        # Sắp xếp theo độ tương đồng giảm dần và lấy top 5 sản phẩm
-        recommended_products = sorted(recommended_products, key=lambda x: x[1], reverse=True)[:5]
+        for user in users:
+            predicted_ratings[user] = {}
+            for product in products:
+                if rating_matrix[user][product] is None:  # Sản phẩm chưa được đánh giá
+                    numerator = 0
+                    denominator = 0
+                    for other_user in users:
+                        similarity = user_similarity_matrix[user].get(other_user, 0)
+                        if rating_matrix[other_user][product] is not None:
+                            numerator += similarity * normalized_matrix[other_user][product]
+                            denominator += abs(similarity)
+                    predicted_ratings[user][product] = (
+                        user_averages[user] + (numerator / denominator) if denominator > 0 else user_averages[user]
+                    )
 
-        # Lấy thông tin sản phẩm gợi ý
-        top_recommended_product_ids = [product for product, _ in recommended_products]
-        products = Product.objects.filter(id__in=top_recommended_product_ids)
+        # Gợi ý sản phẩm cho người dùng hiện tại
+        current_user_id = int(guest_id)
+        recommendations = [
+            (product, score)
+            for product, score in predicted_ratings[current_user_id].items()
+            if score is not None and rating_matrix[current_user_id][product] is None
+        ]
+
+        # Lấy top 5 sản phẩm có điểm dự đoán cao nhất
+        recommendations = sorted(recommendations, key=lambda x: x[1], reverse=True)[:5]
+        recommended_product_ids = [product for product, _ in recommendations]
+
+        # Truy vấn thông tin sản phẩm và trả về kết quả
+        products = Product.objects.filter(id__in=recommended_product_ids)
         serializer = ProductSerializer(products, many=True)
 
         return Response({
             "status": 200,
             "data": serializer.data
-            })
+        })

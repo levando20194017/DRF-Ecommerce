@@ -326,6 +326,7 @@ class OrderViewSet(viewsets.ViewSet):
                         <tr>
                             <th>Product Name</th>
                             <th>Quantity</th>
+                            <th>Color</th>
                             <th>Unit Price</th>
                             <th>Location Pickup</th>
                         </tr>
