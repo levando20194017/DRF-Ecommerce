@@ -20,7 +20,9 @@ from drfecommerce.settings import base
 from django.db.models import Q
 from django.db.models import Min
 from drfecommerce.apps.guest.authentication import GuestSafeJWTAuthentication
-
+from supabase import create_client
+import uuid
+supabase = create_client(base.SUPABASE_URL, base.SUPABASE_KEY)
 # Load environment variables from .env file
 load_dotenv()
 # Create your views here.
@@ -362,37 +364,66 @@ class ProductViewSet(viewsets.ViewSet):
             "message": "Product restored successfully."
         }, status=status.HTTP_200_OK)
     
-    @action(detail=False, methods=['post'], url_path="upload-gallery")
-    def upload_gallery(self, request):
-        """
-        form-data: files
-        """
-        if 'files' not in request.FILES:
-            return Response({
-                "status": status.HTTP_400_BAD_REQUEST,
-                "message": "No image files found in request."
+@action(detail=False, methods=['post'], url_path="upload-gallery")
+def upload_gallery(self, request):
+    """
+    form-data: files
+    """
+    if 'files' not in request.FILES:
+        return Response({
+            "status": status.HTTP_400_BAD_REQUEST,
+            "message": "No image files found in request."
+        })
+
+    files = request.FILES.getlist('files')  # Lấy danh sách các file từ request
+    image_urls = []  # Danh sách ảnh upload thành công
+    errors = []  # Danh sách lỗi của ảnh bị lỗi
+
+    for image in files:
+        try:
+            file_extension = image.name.split('.')[-1]
+            new_img_name = f"{uuid.uuid4().hex}.{file_extension}"
+
+            # Chuyển image thành bytes
+            image.file.seek(0)  
+            image_bytes = image.read()  
+
+            # Upload lên Supabase
+            res = supabase.storage.from_(base.SUPABASE_BUCKET_NAME).upload(
+                new_img_name, 
+                image_bytes, 
+                file_options={"content-type": image.content_type}
+            )
+
+            # Kiểm tra lỗi từ Supabase
+            if not res:
+                raise Exception(res.get("error", {}).get("message", "Unknown error"))
+
+            # Tạo URL ảnh
+            file_url = f"{base.MEDIA_URL}{new_img_name}"
+            image_urls.append(file_url)  # Lưu vào danh sách ảnh thành công
+
+        except Exception as e:
+            errors.append({
+                "file_name": image.name,
+                "error": str(e)
             })
 
-        files = request.FILES.getlist('files')  # Lấy danh sách các file từ request
-        image_urls = []  # Danh sách lưu URL của các ảnh đã upload
-
-        for image in files:
-            img_name = image.name
-
-            # Sử dụng default_storage để lưu ảnh vào thư mục cục bộ hoặc dịch vụ lưu trữ khác trong tương lai
-            save_path = os.path.join(base.MEDIA_ROOT, img_name)
-            file_path = default_storage.save(save_path, ContentFile(image.read()))
-            file_url = default_storage.url(file_path)
-
-            # Lưu URL của ảnh vào danh sách
-            image_urls.append(file_url)
-
+    # Nếu **tất cả ảnh đều lỗi**, trả về lỗi luôn
+    if not image_urls:
         return Response({
-            "status": status.HTTP_200_OK,
-            "message": "Images uploaded successfully!",
-            "image_urls": image_urls  # Trả về danh sách các URL của ảnh đã upload
-        }, status=status.HTTP_200_OK)
+            "status": status.HTTP_500_INTERNAL_SERVER_ERROR,
+            "message": "All images failed to upload.",
+            "errors": errors
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+    # Nếu có ảnh thành công, trả vềzz kết quả
+    return Response({
+        "status": status.HTTP_200_OK,
+        "message": "Images uploaded successfully!",
+        "image_urls": image_urls,  # Trả về danh sách các URL của ảnh đã upload
+        "errors": errors  # Chỉ báo lỗi nếu có ảnh nào thất bại
+    }, status=status.HTTP_200_OK)
 @authentication_classes([])        
 @permission_classes([AllowAny])
 class PublicProductViewset(viewsets.ViewSet):
@@ -702,7 +733,7 @@ class GuestProductViewset(viewsets.ViewSet):
             img_name = image.name
 
             # Sử dụng default_storage để lưu ảnh vào thư mục cục bộ hoặc dịch vụ lưu trữ khác trong tương lai
-            save_path = os.path.join(base.MEDIA_ROOT, img_name)
+            save_path = os.path.join(base.MEDIA_URL, img_name)
             file_path = default_storage.save(save_path, ContentFile(image.read()))
             file_url = default_storage.url(file_path)
 

@@ -19,15 +19,14 @@ from drfecommerce.apps.guest.utils import generate_access_token, generate_refres
 from rest_framework import exceptions
 import os
 from dotenv import load_dotenv
-from django.core.files.base import ContentFile
-from django.core.files.storage import default_storage
+# from django.core.files.base import ContentFile
+# from django.core.files.storage import default_storage
 from drfecommerce.settings import base
-
-from django.core.files.storage import default_storage
-from django.core.files.base import ContentFile
+from supabase import create_client
+import uuid
 # Load environment variables from .env file
 load_dotenv()
-
+supabase = create_client(base.SUPABASE_URL, base.SUPABASE_KEY) 
 class GuestViewSetGetData(viewsets.ViewSet):
     """
     A simple Viewset for handling user actions.
@@ -145,7 +144,7 @@ class GuestViewSetChangeInfor(viewsets.ViewSet):
                 "status": 404,
                 "message": "User not found."
             })
-            
+           
     @action(detail=False, methods=['put'], url_path="change-avatar")
     def change_avatar(self, request):
         if 'file' not in request.FILES:
@@ -170,14 +169,36 @@ class GuestViewSetChangeInfor(viewsets.ViewSet):
             })
 
         image = request.FILES['file']
-        img_name = image.name
+        # img_name = image.name
+        # image.file.seek(0)
+        # content_file = ContentFile(image.read(), name=img_name)
 
+        # Tạo tên file mới bằng UUID
+        file_extension = image.name.split('.')[-1]
+        new_img_name = f"{uuid.uuid4().hex}.{file_extension}"
+        
         try:
             # Sử dụng default_storage để lưu ảnh
-            save_path = os.path.join(base.MEDIA_ROOT, img_name)
-            file_path = default_storage.save(save_path, ContentFile(image.read()))
-            file_url = default_storage.url(file_path)
+            # save_path = os.path.join(base.MEDIA_ROOT, img_name)
+            # file_path = default_storage.save(save_path, ContentFile(image.read()))
+            # file_url = default_storage.url(file_path)
+            
+            # default_storage.save(img_name, content_file)  # Lưu file
+            # file_url = f"{base.MEDIA_URL}{img_name}"  # Tạo URL đúng
+            image.file.seek(0)  
+            image_bytes = image.read()  
+            res = supabase.storage.from_(base.SUPABASE_BUCKET_NAME).upload(
+                new_img_name, 
+                image_bytes, 
+                file_options={"content-type": image.content_type}
+            )
+            print(res)
+            if not res:
+                raise Exception(res.get("error", {}).get("message", "Unknown error"))
 
+            # Tạo URL ảnh
+            file_url = f"{base.MEDIA_URL}{new_img_name}"
+            
             # Cập nhật avatar của user
             user.avatar = file_url
             user.save()

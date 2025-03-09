@@ -22,7 +22,9 @@ from dotenv import load_dotenv
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 from drfecommerce.settings import base
-
+from supabase import create_client
+import uuid
+supabase = create_client(base.SUPABASE_URL, base.SUPABASE_KEY)
 # Load environment variables from .env file
 load_dotenv()
 
@@ -244,15 +246,47 @@ class AdminViewsetUploadImage(viewsets.ViewSet):
             })
 
         image = request.FILES['file']
-        img_name = image.name
+        # img_name = image.name
 
         # Sử dụng default_storage để lưu ảnh vào thư mục cục bộ hoặc dịch vụ lưu trữ khác trong tương lai
-        save_path = os.path.join(base.MEDIA_ROOT, img_name)
-        file_path = default_storage.save(save_path, ContentFile(image.read()))
-        file_url = default_storage.url(file_path)
+        # save_path = os.path.join(base.MEDIA_ROOT, img_name)
+        # file_path = default_storage.save(save_path, ContentFile(image.read()))
+        # file_url = default_storage.url(file_path)
 
-        return Response({
-            "status": status.HTTP_200_OK,
-            "message": "Image uploaded successfully!",
-            "img_url": file_url
-        }, status=status.HTTP_200_OK)
+        # file_path = default_storage.save(img_name, ContentFile(image.read()))
+        # file_url = default_storage.url(file_path)  # Lấy URL file từ Supabase
+        file_extension = image.name.split('.')[-1]
+        new_img_name = f"{uuid.uuid4().hex}.{file_extension}"
+        
+        try:
+            # Sử dụng default_storage để lưu ảnh
+            # save_path = os.path.join(base.MEDIA_ROOT, img_name)
+            # file_path = default_storage.save(save_path, ContentFile(image.read()))
+            # file_url = default_storage.url(file_path)
+            
+            # default_storage.save(img_name, content_file)  # Lưu file
+            # file_url = f"{base.MEDIA_URL}{img_name}"  # Tạo URL đúng
+            image.file.seek(0)  
+            image_bytes = image.read()  
+            res = supabase.storage.from_(base.SUPABASE_BUCKET_NAME).upload(
+                new_img_name, 
+                image_bytes, 
+                file_options={"content-type": image.content_type}
+            )
+            if not res:
+                raise Exception(f"Upload failed: {res.json()}")
+
+            # Tạo URL ảnh
+            file_url = f"{base.MEDIA_URL}{new_img_name}"
+            
+            return Response({
+                "status": status.HTTP_200_OK,
+                "message": "upload image successfully!",
+                "img_url": file_url
+            }, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({
+                "status": status.HTTP_500_INTERNAL_SERVER_ERROR,
+                "message": f"An error occurred while saving the image: {str(e)}"
+            })

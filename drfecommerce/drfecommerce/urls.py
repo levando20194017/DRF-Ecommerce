@@ -215,4 +215,6 @@ urlpatterns = [
     
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/schema/docs", SpectacularSwaggerView.as_view(url_name="schema")),
-]+ static(base.MEDIA_URL, document_root=base.MEDIA_ROOT)
+]
+#nếu lưu ảnh ở local máy tính thì sử dụng như bên dưới
+#static(base.MEDIA_URL, document_root=base.MEDIA_ROOT)

@@ -66,12 +66,12 @@ CORS_ALLOWED_ORIGINS = ['http://localhost:3000', 'http://localhost:3001']
 CORS_ALLOW_METHODS = ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"]
 
 # Đường dẫn cục bộ cho việc lưu trữ ảnh
-ECOMMERCE_IMAGES_DIR = os.path.join(BASE_DIR, 'C:/Users/Mine/Documents/document/PROJECT/DATN/Ecommerce_Images')
-
-# Cấu hình storage mặc định để lưu trữ file cục bộ
-DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
-MEDIA_ROOT = ECOMMERCE_IMAGES_DIR
-MEDIA_URL = '/media/'  # Nếu bạn cần phục vụ ảnh từ URL
+# ECOMMERCE_IMAGES_DIR = os.path.join(BASE_DIR, 'C:/Users/Mine/Documents/document/PROJECT/DATN/Ecommerce_Images')
+# #https://xdgoxqscdzswkdvengoi.supabase.co/storage/v1/s3
+# # Cấu hình storage mặc định để lưu trữ file cục bộ
+# DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+# MEDIA_ROOT = ECOMMERCE_IMAGES_DIR
+# MEDIA_URL = '/media/'  # Nếu bạn cần phục vụ ảnh từ URL
 
 #config storage to save image in the future
 # DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
@@ -87,6 +87,24 @@ MEDIA_URL = '/media/'  # Nếu bạn cần phục vụ ảnh từ URL
 # # URL sẽ được sử dụng để truy cập file từ S3
 # AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
 # MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/'
+
+
+# Cấu hình Supabase Storage
+SUPABASE_URL = "https://xdgoxqscdzswkdvengoi.supabase.co"
+SUPABASE_BUCKET_NAME = os.environ.get("VIVA_BUCKET_NAME")
+SUPABASE_KEY = os.environ.get("VIVA_SERVICE_ROLE_KEY")  # Lấy từ Supabase Dashboard
+SUPABASE_REGION = os.environ.get("VIVA_REGION")  # Supabase sử dụng AWS S3-compatible API
+
+# Sử dụng S3 của Supabase
+DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+AWS_ACCESS_KEY_ID = os.environ.get("VIVA_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = os.environ.get("VIVA_SECRET_ACCESS_KEY")
+AWS_STORAGE_BUCKET_NAME = SUPABASE_BUCKET_NAME
+AWS_S3_ENDPOINT_URL = f"{SUPABASE_URL}/storage/v1/s3"
+AWS_S3_ADDRESSING_STYLE = "path"  # Supabase sử dụng kiểu path-style
+AWS_QUERYSTRING_AUTH = False  # Nếu bucket public, đặt False để không cần token
+
+MEDIA_URL = f"{SUPABASE_URL}/storage/v1/object/public/{SUPABASE_BUCKET_NAME}/"
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
